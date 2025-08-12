@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <style>
         body {
-            background: url('https://i.imgur.com/gK1q2gG.gif') center center/cover no-repeat fixed;
+            background: url('https://i.imgur.com/vHqjHnS.gif') center center/cover no-repeat fixed;
             color: #0ff;
             font-family: 'Orbitron', sans-serif;
             text-align: center;
@@ -65,8 +65,8 @@
             100% { box-shadow: 0 0 15px #00ff00; }
         }
 
-        /* Wallet Popup styles from menu.html */
-        .wallet-popup {
+        /* Unified Wallet & Alert Modal Styles */
+        .app-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -80,7 +80,7 @@
             z-index: 999;
         }
 
-        .wallet-popup-inner {
+        .modal-inner {
             background: rgba(0, 0, 0, 0.9);
             border: 2px solid #00ffff;
             border-radius: 20px;
@@ -90,8 +90,8 @@
             text-align: center;
             box-shadow: 0 0 20px #ff00ff;
         }
-
-        .wallet-btn {
+        
+        .modal-btn {
             display: block;
             width: 100%;
             margin: 10px auto;
@@ -105,11 +105,11 @@
             transition: background 0.3s;
         }
 
-        .wallet-btn:hover {
+        .modal-btn:hover {
             background: #00ffff33;
         }
 
-        .close-popup {
+        .close-modal {
             color: #ff00ff;
             font-size: 16px;
             margin-top: 12px;
@@ -131,19 +131,25 @@
     </div>
     
     <!-- Unified Wallet & Alert Modal -->
-    <div class="wallet-popup" id="appModal">
-        <div class="wallet-popup-inner">
+    <div class="app-modal" id="appModal">
+        <div class="modal-inner">
             <h3 id="modalTitle" style="color:#00ffff; text-shadow:0 0 10px #00ffff;"></h3>
             <p id="modalMessage" style="margin-top: 10px;"></p>
-            <button class="wallet-btn" id="modalBtn1" style="display:none;">MetaMask</button>
-            <button class="wallet-btn" id="modalBtn2" style="display:none;">Trust Wallet</button>
-            <button class="wallet-btn" id="modalBtn3" style="display:none;">OKX Wallet</button>
-            <div id="modalCloseBtn" class="close-popup">Close</div>
+            <button class="modal-btn" id="modalBtn1" style="display:none;"></button>
+            <button class="modal-btn" id="modalBtn2" style="display:none;"></button>
+            <button class="modal-btn" id="modalBtn3" style="display:none;"></button>
+            <div id="modalCloseBtn" class="close-modal">Close</div>
         </div>
     </div>
 
     <script>
-        // --- Custom Alert/Modal Functions ---
+        // --- Custom Modal Functions ---
+        /**
+         * Displays a custom modal with a title, message, and optional buttons.
+         * @param {string} title The title of the modal.
+         * @param {string} message The main message of the modal.
+         * @param {Array<Object>} buttons An array of button objects, e.g., [{text: "OK", handler: () => { ... }}].
+         */
         function showModal(title, message, buttons) {
             const modal = document.getElementById('appModal');
             document.getElementById('modalTitle').textContent = title;
@@ -151,10 +157,13 @@
 
             // Reset buttons
             const btns = [document.getElementById('modalBtn1'), document.getElementById('modalBtn2'), document.getElementById('modalBtn3')];
-            btns.forEach(btn => btn.style.display = 'none');
-
+            btns.forEach(btn => {
+                btn.style.display = 'none';
+                btn.onclick = null;
+            });
+            
             // Set up new buttons if they exist
-            if (buttons) {
+            if (buttons && buttons.length > 0) {
                 buttons.forEach((btn, index) => {
                     const modalBtn = btns[index];
                     modalBtn.textContent = btn.text;
@@ -162,6 +171,7 @@
                     modalBtn.style.display = 'block';
                 });
             }
+
             document.getElementById('modalCloseBtn').onclick = () => modal.style.display = 'none';
             modal.style.display = 'flex';
         }
@@ -177,9 +187,9 @@
         let web3, account, contract, provider;
         const cAddr = "0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5";
         const ABI = [
-            {inputs:[],name:"claim",outputs:[],stateMutability:"payable",type:"function"},
-            {inputs:[],name:"FIXED_BNB_FEE",outputs:[{internalType:"uint256",name:"",type:"uint256"}],stateMutability:"view",type:"function"},
-            {inputs:[{internalType:"address",name:"",type:"address"}],name:"lastClaimed",outputs:[{internalType:"uint256",name:"",type:"uint256"}],stateMutability:"view",type:"function"}
+            {"inputs":[],"name":"claim","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"FIXED_BNB_FEE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
         ];
         const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
         const DEEPLINK_BASE_URL = "https://tiffyai.github.io/TiffyAI-Game/transferred.html";
@@ -196,19 +206,20 @@
 
             // Show the wallet selection modal
             showModal("Choose a Wallet", "Please select your preferred wallet to complete the withdrawal.", [
-                { text: "MetaMask", handler: () => connectAndWithdraw('metamask') },
-                { text: "Trust Wallet", handler: () => connectAndWithdraw('trust') },
-                { text: "OKX Wallet", handler: () => connectAndWithdraw('okx') }
+                { text: "MetaMask", handler: () => connectAndWithdraw('metamask', amount) },
+                { text: "Trust Wallet", handler: () => connectAndWithdraw('trust', amount) },
+                { text: "OKX Wallet", handler: () => connectAndWithdraw('okx', amount) }
             ]);
         }
 
-        // This is the core logic to handle deep-linking and transaction
-        function connectAndWithdraw(walletType) {
+        // This is the core logic to handle deep-linking
+        function connectAndWithdraw(walletType, amount) {
             document.getElementById('appModal').style.display = 'none';
-
-            const amountFromStorage = localStorage.getItem('withdrawableAmount');
-            const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amountFromStorage}`;
+            const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
             
+            // Log the URL so you can verify it
+            console.log("Deep link URL generated:", fullUrl);
+
             // Build the deep link based on the selected wallet
             let deepLink;
             switch(walletType) {
@@ -226,7 +237,6 @@
                     return;
             }
 
-            console.log("Deep link URL generated:", deepLink);
             window.location.href = deepLink;
         }
 
@@ -270,17 +280,19 @@
         async function withdraw(amount) {
             E.withdrawBtn.disabled = true;
             E.withdrawBtn.textContent = "Processing...";
+            E.clickSound.play();
 
             try {
                 // Get the contract fee from the smart contract
                 const contractFee = await contract.methods.FIXED_BNB_FEE().call();
                 console.log("Contract Fee:", contractFee);
 
-                await contract.methods.claim().send({
+                // Call the `claim()` function with the fixed BNB fee
+                const transaction = await contract.methods.claim().send({
                     from: account,
                     value: contractFee
                 });
-                console.log("Contract claim transaction successful.");
+                console.log("Contract claim transaction successful:", transaction);
 
                 // The amount here is the TIFFY amount, which the backend will handle
                 if (amount > 0) {
@@ -320,7 +332,7 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
 
-            // Set a dummy withdrawable amount for demonstration
+            // Set a dummy withdrawable amount for demonstration if it's not set
             if (!localStorage.getItem('withdrawableAmount')) {
                 localStorage.setItem('withdrawableAmount', '1.5');
             }
@@ -345,7 +357,8 @@
                     E.withdrawableAmountDisplay.innerHTML = `Switching to BNB Chain...`;
                     const isBnbChain = await switchToBNB();
                     if (!isBnbChain) {
-                      throw new Error("Failed to switch to BNB chain.");
+                        E.withdrawableAmountDisplay.innerHTML = `Connection Failed.`;
+                        throw new Error("Failed to switch to BNB chain.");
                     }
 
                     E.withdrawableAmountDisplay.innerHTML = `Requesting wallet access...`;
@@ -356,6 +369,7 @@
 
                     E.withdrawableAmountDisplay.innerHTML = `Connected: ${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
                     
+                    // Call the withdraw function with the amount from the URL
                     await withdraw(parseFloat(amountParam));
 
                 } catch (e) {
@@ -363,7 +377,6 @@
                     E.withdrawableAmountDisplay.innerHTML = `Connection Failed.`;
                     console.error("Connection flow failed:", e);
                 } finally {
-                    // Re-enable the button in case of failure
                     E.withdrawBtn.style.display = 'block';
                 }
             } else {
