@@ -209,6 +209,7 @@
 
         // This function retrieves balances from local storage and updates the UI
         function loadBalances() {
+            // Read from local storage without overwriting it
             const claimedTIFFY = parseFloat(localStorage.getItem('claimedTIFFY') || 0);
             const synchronizedEarnings = parseFloat(localStorage.getItem('synchronizedEarnings') || 0);
             totalWithdrawableAmount = claimedTIFFY + synchronizedEarnings;
@@ -346,10 +347,9 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
 
-            // Set the correct local storage value for demonstration
-            localStorage.setItem('claimedTIFFY', '154.82');
-            localStorage.setItem('synchronizedEarnings', '0.00');
-
+            // --- IMPORTANT CHANGE: REMOVED HARDCODED LOCAL STORAGE SETTINGS ---
+            // The app will now read your actual balances from local storage.
+            
             loadBalances();
             E.mainContent.style.display = 'block';
 
