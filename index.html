@@ -50,6 +50,60 @@
     box-shadow: 0 0 20px hotpink, 0 0 40px hotpink; animation: pulsePink 1.5s infinite;
   }
   @keyframes pulsePink { 0%{box-shadow:0 0 15px hotpink} 50%{box-shadow:0 0 40px hotpink} 100%{box-shadow:0 0 15px hotpink} }
+  /* New "lumo green" style for the Withdraw button */
+  .withdraw-btn {
+    background: rgba(147, 255, 20, 0.15);
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+    animation: pulseGreen 1.5s infinite;
+  }
+  @keyframes pulseGreen { 0%{box-shadow:0 0 15px #00ff00} 50%{box-shadow:0 0 40px #00ff00} 100%{box-shadow:0 0 15px #00ff00} }
+
+  /* Copied Wallet Popup styles from menu.html */
+  .wallet-popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+  }
+  .wallet-popup-inner {
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #00ffff;
+      border-radius: 20px;
+      padding: 30px 20px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 0 20px #ff00ff;
+  }
+  .wallet-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 16px;
+      color: white;
+      background-color: #111111;
+      border: 1px solid #00ffff;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+  }
+  .wallet-btn:hover {
+      background: #00ffff33;
+  }
+  .close-popup {
+      color: #ff00ff;
+      font-size: 16px;
+      margin-top: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -65,7 +119,16 @@
   <div><strong>Claimed TIFFY:</strong> <span id="claimed">0</span></div>
   <div><strong>Game Earnings:</strong> <span id="tetris">0</span></div>
   <div><strong>Total Withdrawable:</strong> <span id="total">0</span></div>
-  <button class="btn transfer" id="transferBtn" style="display:none">Transfer to Wallet</button>
+  <button class="btn withdraw-btn" id="withdrawBtn">Withdraw</button>
+</div>
+
+<div class="wallet-popup" id="walletPopup">
+  <div class="wallet-popup-inner">
+    <button class="wallet-btn" onclick="launchWallet('metamask')">MetaMask</button>
+    <button class="wallet-btn" onclick="launchWallet('trust')">Trust Wallet</button>
+    <button class="wallet-btn" onclick="launchWallet('okx')">OKX Wallet</button>
+    <div class="close-popup" onclick="closePopup()">Close</div>
+  </div>
 </div>
 
 <script>
@@ -98,27 +161,35 @@
     document.getElementById("claimed").textContent = claimed.toFixed(2);
     document.getElementById("tetris").textContent = tetris.toFixed(2);
     document.getElementById("total").textContent = total.toFixed(2);
-    document.getElementById("transferBtn").style.display = total > 0 ? "inline-block" : "none";
   }
 
-  document.getElementById("connectBtn").onclick = async() => {
-    clickSound.play();
-    await connectWallet();
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    document.getElementById("transferCard").style.display = "inline-block";
-    loadBalances();
-  };
+  // New functions for the pop-up
+  function openPopup() {
+    document.getElementById('walletPopup').style.display = 'flex';
+  }
 
-  document.getElementById("browserConnectBtn").onclick = () => {
-    clickSound.play();
-    account = null; // Browser mode = no wallet connected yet
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    document.getElementById("transferCard").style.display = "inline-block";
-    loadBalances();
-  };
+  function closePopup() {
+    document.getElementById('walletPopup').style.display = 'none';
+  }
+  
+  function launchWallet(wallet) {
+    const currentUrl = window.location.href;
+    closePopup();
 
+    switch(wallet) {
+      case 'metamask':
+        window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
+        break;
+      case 'trust':
+        window.location.href = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`;
+        break;
+      case 'okx':
+        window.location.href = `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(currentUrl)}`;
+        break;
+    }
+  }
+
+  // Keep original connection functions but adapt the flow
   async function connectWallet(){
     provider = await wModal.connect();
     web3 = new Web3(provider);
@@ -151,9 +222,53 @@
     } catch(e){ alert("❌ Withdraw failed: "+(e.message||e)); }
   }
 
-  document.getElementById("transferBtn").onclick = async () => {
-    if(!account){ await connectWallet(); }
-    await withdraw();
+  // Initial setup when the page loads
+  (async function init(){
+    // Check if a wallet provider is already injected (meaning we are in a dApp browser)
+    if (window.ethereum || window.web3) {
+      await connectWallet();
+      document.getElementById("connectBtn").style.display = "none";
+      document.getElementById("browserConnectBtn").style.display = "none";
+      document.getElementById("transferCard").style.display = "inline-block";
+      loadBalances();
+      
+      // Auto-call withdraw() after wallet is connected.
+      // This is the core of the new logic.
+      await withdraw();
+    } else {
+      // If no wallet is injected, show the initial buttons
+      document.getElementById("transferCard").style.display = "inline-block";
+      loadBalances();
+    }
+  })();
+
+  // Updated button click handlers for the new user flow
+  document.getElementById("connectBtn").onclick = async() => {
+    clickSound.play();
+    await connectWallet();
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none";
+    loadBalances();
+  };
+
+  document.getElementById("browserConnectBtn").onclick = () => {
+    clickSound.play();
+    account = null;
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none";
+    loadBalances();
+  };
+
+  document.getElementById("withdrawBtn").onclick = async () => {
+    clickSound.play();
+    if(!account) {
+        // If no account is connected yet, open the wallet popup to deep-link.
+        // This is the key difference for the new flow.
+        openPopup();
+    } else {
+        // If an account is already connected, just call withdraw.
+        await withdraw();
+    }
   };
 })();
 </script>
