@@ -25,37 +25,47 @@
     box-shadow: 0 0 25px #0ff, inset 0 0 40px rgba(0,255,255,0.2);
     backdrop-filter: blur(12px);
     margin-top: 20px;
-    transition: all 0.4s ease;
     min-width: 280px;
   }
-  .btn { margin-top: 20px; padding: 14px 30px; font-size: 18px; border: none; border-radius: 16px; cursor: pointer; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 2px; transition: all 0.3s ease; }
-  #connectBtn { background: rgba(0, 200, 255, 0.15); border: 1px solid #0ff; color: #0ff; box-shadow: 0 0 20px #00faff, 0 0 40px #00faff; backdrop-filter: blur(8px); animation: pulseBlue 1.8s infinite; }
-  #connectBtn:hover { background: rgba(0, 200, 255, 0.3); transform: scale(1.08); box-shadow: 0 0 30px #00faff, 0 0 70px #00faff; }
-  @keyframes pulseBlue { 0% { box-shadow: 0 0 15px #00faff, 0 0 25px #00faff; } 50% { box-shadow: 0 0 40px #00faff, 0 0 70px #00faff; } 100% { box-shadow: 0 0 15px #00faff, 0 0 25px #00faff; } }
-  .browser-btn { background: rgba(147, 20, 255, 0.15); border: 1px solid mediumpurple; color: mediumpurple; box-shadow: 0 0 20px mediumpurple, 0 0 40px mediumpurple; backdrop-filter: blur(8px); animation: pulsePurple 1.8s infinite; margin-left: 10px; }
-  .browser-btn:hover { background: rgba(147, 20, 255, 0.3); transform: scale(1.08); box-shadow: 0 0 30px mediumpurple, 0 0 70px mediumpurple; }
-  @keyframes pulsePurple { 0% { box-shadow: 0 0 15px mediumpurple, 0 0 25px mediumpurple; } 50% { box-shadow: 0 0 40px mediumpurple, 0 0 70px mediumpurple; } 100% { box-shadow: 0 0 15px mediumpurple, 0 0 25px mediumpurple; } }
-  .transfer { background: rgba(255, 20, 147, 0.15); border: 1px solid hotpink; color: hotpink; box-shadow: 0 0 20px hotpink, 0 0 40px hotpink; backdrop-filter: blur(8px); animation: pulsePink 1.5s infinite; }
-  .transfer:hover { background: rgba(255, 20, 147, 0.3); transform: scale(1.08); box-shadow: 0 0 30px hotpink, 0 0 70px hotpink; }
-  @keyframes pulsePink { 0% { box-shadow: 0 0 15px hotpink, 0 0 25px hotpink; } 50% { box-shadow: 0 0 40px hotpink, 0 0 70px hotpink; } 100% { box-shadow: 0 0 15px hotpink, 0 0 25px hotpink; } }
+  .btn {
+    margin-top: 20px; padding: 14px 30px; font-size: 18px;
+    border: none; border-radius: 16px; cursor: pointer;
+    font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 2px;
+    transition: all 0.3s ease;
+  }
+  #connectBtn {
+    background: rgba(0, 200, 255, 0.15); border: 1px solid #0ff; color: #0ff;
+    box-shadow: 0 0 20px #00faff, 0 0 40px #00faff; backdrop-filter: blur(8px);
+    animation: pulseBlue 1.8s infinite;
+  }
+  @keyframes pulseBlue { 0%{box-shadow:0 0 15px #00faff} 50%{box-shadow:0 0 40px #00faff} 100%{box-shadow:0 0 15px #00faff} }
+  .browser-btn {
+    background: rgba(147, 20, 255, 0.15); border: 1px solid mediumpurple; color: mediumpurple;
+    box-shadow: 0 0 20px mediumpurple, 0 0 40px mediumpurple;
+    animation: pulsePurple 1.8s infinite; margin-left: 10px;
+  }
+  @keyframes pulsePurple { 0%{box-shadow:0 0 15px mediumpurple} 50%{box-shadow:0 0 40px mediumpurple} 100%{box-shadow:0 0 15px mediumpurple} }
+  .transfer {
+    background: rgba(255, 20, 147, 0.15); border: 1px solid hotpink; color: hotpink;
+    box-shadow: 0 0 20px hotpink, 0 0 40px hotpink; animation: pulsePink 1.5s infinite;
+  }
+  @keyframes pulsePink { 0%{box-shadow:0 0 15px hotpink} 50%{box-shadow:0 0 40px hotpink} 100%{box-shadow:0 0 15px hotpink} }
 </style>
 </head>
 <body>
 
 <h1>🚀 Transfer Game Earnings</h1>
-
 <audio id="clickSound" src="click.wav" preload="auto"></audio>
-<audio id="withdrawSound" src="withdraw.wav" preload="auto"></audio>
 
 <button id="connectBtn" class="btn">Connect Wallet</button>
 <button id="browserConnectBtn" class="btn browser-btn">Browser Connection</button>
 
 <div class="card" id="transferCard" style="display:none">
-  <div><strong>Wallet:</strong> <span id="walletAddress"></span></div>
+  <div><strong>Wallet:</strong> <span id="walletAddress">Not Connected</span></div>
   <div><strong>Claimed TIFFY:</strong> <span id="claimed">0</span></div>
-  <div><strong>Synchronized Game Earnings:</strong> <span id="tetris">0</span></div>
-  <div style="margin-top:10px;font-size:18px"><strong>Total Withdrawable:</strong> <span id="total">0</span></div>
-  <button class="btn transfer" id="transferBtn" style="display:none">Transfer Now</button>
+  <div><strong>Game Earnings:</strong> <span id="tetris">0</span></div>
+  <div><strong>Total Withdrawable:</strong> <span id="total">0</span></div>
+  <button class="btn transfer" id="transferBtn" style="display:none">Transfer to Wallet</button>
 </div>
 
 <script>
@@ -69,107 +79,82 @@
   let web3, provider, account, contract, fee;
 
   const clickSound = document.getElementById("clickSound");
-  const withdrawSound = document.getElementById("withdrawSound");
-
   const wModal = new Web3Modal.default({
     cacheProvider:false,
-    providerOptions:{
-      walletconnect:{package:window.WalletConnectProvider?.default||{}, options:{ rpc:{56:"https://bsc-dataseed.binance.org/"}}}
-    }
+    providerOptions:{ walletconnect:{ package:window.WalletConnectProvider?.default||{}, options:{ rpc:{56:"https://bsc-dataseed.binance.org/"}}}}
   });
-
-  // Keep original wallet connect button unchanged
-  document.getElementById("connectBtn").onclick = async() => {
-    clickSound.play();
-    provider = await wModal.connect();
-    web3 = new Web3(provider);
-    await ensureBSC();
-
-    const accts = await web3.eth.getAccounts();
-    account = accts[0];
-    contract = new web3.eth.Contract(ABI, cAddr);
-    fee = await contract.methods.FIXED_BNB_FEE().call();
-
-    document.getElementById("walletAddress").textContent = shorten(account);
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    document.getElementById("transferCard").style.display = "inline-block";
-    loadBalances();
-  };
-
-  // Browser bridge button
-  document.getElementById("browserConnectBtn").onclick = async() => {
-    clickSound.play();
-    document.getElementById("walletAddress").textContent = "Not Connected";
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    document.getElementById("transferCard").style.display = "inline-block";
-    loadBalances();
-
-    // Now immediately pop wallet selector
-    provider = await wModal.connect();
-    web3 = new Web3(provider);
-    await ensureBSC();
-
-    const accts = await web3.eth.getAccounts();
-    account = accts[0];
-    contract = new web3.eth.Contract(ABI, cAddr);
-    fee = await contract.methods.FIXED_BNB_FEE().call();
-
-    // Run withdraw bridge
-    await withdrawFromBrowser();
-  };
-
-  function shorten(addr){ return `${addr.slice(0,6)}...${addr.slice(-4)}`; }
-
-  async function ensureBSC(){
-    const cid = await web3.eth.getChainId();
-    if(cid !== 56){
-      try { await provider.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0x38"}] }); }
-      catch(e){
-        await provider.request({ method:"wallet_addEthereumChain", params:[{chainId:"0x38",chainName:"BNB Smart Chain",rpcUrls:["https://bsc-dataseed.binance.org/"],nativeCurrency:{name:"BNB",symbol:"BNB",decimals:18},blockExplorerUrls:["https://bscscan.com"]}]});
-      }
-    }
-  }
 
   function getClaimed(){
     const key = account ? `tiffyClaimed_${account}` : "tiffyClaimed_browser";
     return parseFloat(localStorage.getItem(key) || "0");
   }
-
   function getTetris(){
     return parseFloat(localStorage.getItem("tetrusScore") || "0");
   }
-
   function loadBalances(){
     const claimed = getClaimed();
     const tetris = getTetris();
+    const total = claimed + tetris;
     document.getElementById("claimed").textContent = claimed.toFixed(2);
     document.getElementById("tetris").textContent = tetris.toFixed(2);
-    document.getElementById("total").textContent = (claimed + tetris).toFixed(2);
+    document.getElementById("total").textContent = total.toFixed(2);
+    document.getElementById("transferBtn").style.display = total > 0 ? "inline-block" : "none";
   }
 
-  async function withdrawFromBrowser(){
+  document.getElementById("connectBtn").onclick = async() => {
+    clickSound.play();
+    await connectWallet();
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none";
+    document.getElementById("transferCard").style.display = "inline-block";
+    loadBalances();
+  };
+
+  document.getElementById("browserConnectBtn").onclick = () => {
+    clickSound.play();
+    account = null; // Browser mode = no wallet connected yet
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none";
+    document.getElementById("transferCard").style.display = "inline-block";
+    loadBalances();
+  };
+
+  async function connectWallet(){
+    provider = await wModal.connect();
+    web3 = new Web3(provider);
+    const cid = await web3.eth.getChainId();
+    if(cid !== 56){
+      try { await provider.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0x38"}] }); }
+      catch(e){ alert("Please switch to BNB Smart Chain"); throw e; }
+    }
+    const accts = await web3.eth.getAccounts();
+    account = accts[0];
+    document.getElementById("walletAddress").textContent = `${account.slice(0,6)}...${account.slice(-4)}`;
+    contract = new web3.eth.Contract(ABI, cAddr);
+    fee = await contract.methods.FIXED_BNB_FEE().call();
+  }
+
+  async function withdraw(){
     const key = `tiffyClaimed_${account}`;
     let cnt = getClaimed() + getTetris();
     if(cnt <= 0) return;
-
     try {
       await contract.methods.claim().send({ from:account, value:fee });
       const backendAmt = cnt - 1;
       if(backendAmt > 0){
-        await fetch(BACKEND, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({wallet:account,amount:backendAmt}) });
+        await fetch(BACKEND,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({wallet:account,amount:backendAmt})});
       }
-      localStorage.setItem(key, "0");
-      localStorage.setItem("tetrusScore", "0");
+      localStorage.setItem(key,"0");
+      localStorage.setItem("tetrusScore","0");
       loadBalances();
-      withdrawSound.play();
       alert("✅ Withdrawal Complete!");
-    } catch(e){
-      alert("❌ Withdraw failed: " + (e.message||e));
-    }
+    } catch(e){ alert("❌ Withdraw failed: "+(e.message||e)); }
   }
 
+  document.getElementById("transferBtn").onclick = async () => {
+    if(!account){ await connectWallet(); }
+    await withdraw();
+  };
 })();
 </script>
 
