@@ -207,9 +207,11 @@
         const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
         const DEEPLINK_BASE_URL = window.location.href.split('?')[0];
 
-        // This function retrieves balances from local storage and updates the UI
+        /**
+         * Reads the balance from local storage and updates the UI.
+         */
         function loadBalances() {
-            // Read from local storage without overwriting it
+            // This is the core change. It now only reads from local storage.
             const claimedTIFFY = parseFloat(localStorage.getItem('claimedTIFFY') || 0);
             const synchronizedEarnings = parseFloat(localStorage.getItem('synchronizedEarnings') || 0);
             totalWithdrawableAmount = claimedTIFFY + synchronizedEarnings;
@@ -327,8 +329,9 @@
                 }
 
                 // Assuming this is the logic to reset the claimed amount
-                const key = `tiffyClaimed_${account}`;
-                localStorage.setItem(key, "0");
+                // based on your original wallet logic file.
+                localStorage.setItem('claimedTIFFY', "0");
+                localStorage.setItem('synchronizedEarnings', "0");
                 
                 showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null);
                 
@@ -347,9 +350,6 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
 
-            // --- IMPORTANT CHANGE: REMOVED HARDCODED LOCAL STORAGE SETTINGS ---
-            // The app will now read your actual balances from local storage.
-            
             loadBalances();
             E.mainContent.style.display = 'block';
 
