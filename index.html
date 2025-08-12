@@ -1,277 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>Transfer Game Earnings to TIFFY</title>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-<script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
-<style>
-  body {
-    background: url('ATM.gif') center center/cover no-repeat fixed;
-    color: #0ff;
-    font-family: 'Orbitron', sans-serif;
-    text-align: center;
-    padding: 20px;
-  }
-  h1 { text-shadow: 0 0 20px #00faff, 0 0 40px #00faff; margin-bottom: 30px; font-weight: 700; }
-  .card {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 20px;
-    border: 1px solid #0ff;
-    border-radius: 16px;
-    display: inline-block;
-    box-shadow: 0 0 25px #0ff, inset 0 0 40px rgba(0,255,255,0.2);
-    backdrop-filter: blur(12px);
-    margin-top: 20px;
-    min-width: 280px;
-  }
-  .btn {
-    margin-top: 20px; padding: 14px 30px; font-size: 18px;
-    border: none; border-radius: 16px; cursor: pointer;
-    font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 2px;
-    transition: all 0.3s ease;
-  }
-  #connectBtn {
-    background: rgba(0, 200, 255, 0.15); border: 1px solid #0ff; color: #0ff;
-    box-shadow: 0 0 20px #00faff, 0 0 40px #00faff; backdrop-filter: blur(8px);
-    animation: pulseBlue 1.8s infinite;
-  }
-  @keyframes pulseBlue { 0%{box-shadow:0 0 15px #00faff} 50%{box-shadow:0 0 40px #00faff} 100%{box-shadow:0 0 15px #00faff} }
-  .browser-btn {
-    background: rgba(147, 20, 255, 0.15); border: 1px solid mediumpurple; color: mediumpurple;
-    box-shadow: 0 0 20px mediumpurple, 0 0 40px mediumpurple;
-    animation: pulsePurple 1.8s infinite; margin-left: 10px;
-  }
-  @keyframes pulsePurple { 0%{box-shadow:0 0 15px mediumpurple} 50%{box-shadow:0 0 40px mediumpurple} 100%{box-shadow:0 0 15px mediumpurple} }
-  .transfer {
-    background: rgba(255, 20, 147, 0.15); border: 1px solid hotpink; color: hotpink;
-    box-shadow: 0 0 20px hotpink, 0 0 40px hotpink; animation: pulsePink 1.5s infinite;
-  }
-  @keyframes pulsePink { 0%{box-shadow:0 0 15px hotpink} 50%{box-shadow:0 0 40px hotpink} 100%{box-shadow:0 0 15px hotpink} }
-  /* New "lumo green" style for the Withdraw button */
-  .withdraw-btn {
-    background: rgba(147, 255, 20, 0.15);
-    border: 1px solid #00ff00;
-    color: #00ff00;
-    box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
-    animation: pulseGreen 1.5s infinite;
-  }
-  @keyframes pulseGreen { 0%{box-shadow:0 0 15px #00ff00} 50%{box-shadow:0 0 40px #00ff00} 100%{box-shadow:0 0 15px #00ff00} }
+    <meta charset="UTF-8"/>
+    <title>TiffyAI Transfer & Withdraw</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            background: url('ATM.gif') center center/cover no-repeat fixed;
+            color: #0ff;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-  /* Copied Wallet Popup styles from menu.html */
-  .wallet-popup {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-  }
-  .wallet-popup-inner {
-      background: rgba(0, 0, 0, 0.9);
-      border: 2px solid #00ffff;
-      border-radius: 20px;
-      padding: 30px 20px;
-      max-width: 320px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 0 20px #ff00ff;
-  }
-  .wallet-btn {
-      display: block;
-      margin: 10px auto;
-      padding: 12px;
-      font-size: 16px;
-      color: white;
-      background-color: #111111;
-      border: 1px solid #00ffff;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.3s;
-  }
-  .wallet-btn:hover {
-      background: #00ffff33;
-  }
-  .close-popup {
-      color: #ff00ff;
-      font-size: 16px;
-      margin-top: 12px;
-      cursor: pointer;
-      text-decoration: underline;
-  }
-</style>
+        h1 {
+            text-shadow: 0 0 20px #00faff, 0 0 40px #00faff;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border: 1px solid #0ff;
+            border-radius: 16px;
+            display: inline-block;
+            box-shadow: 0 0 25px #0ff, inset 0 0 40px rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            margin-top: 20px;
+            min-width: 280px;
+            max-width: 400px;
+        }
+
+        .card p, .card h2 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 14px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .withdraw-btn {
+            background: rgba(147, 255, 20, 0.15);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            animation: pulseGreen 1.5s infinite;
+        }
+
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 15px #00ff00; }
+            50% { box-shadow: 0 0 40px #00ff00; }
+            100% { box-shadow: 0 0 15px #00ff00; }
+        }
+
+        /* Unified Wallet & Alert Modal Styles */
+        .app-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-inner {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ffff;
+            border-radius: 20px;
+            padding: 30px 20px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+        
+        .modal-btn {
+            display: block;
+            width: 100%;
+            margin: 10px auto;
+            padding: 12px;
+            font-size: 16px;
+            color: white;
+            background-color: #111111;
+            border: 1px solid #00ffff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .modal-btn:hover {
+            background: #00ffff33;
+        }
+
+        .close-modal {
+            color: #ff00ff;
+            font-size: 16px;
+            margin-top: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
-<h1>🚀 Transfer Game Earnings</h1>
-<audio id="clickSound" src="click.wav" preload="auto"></audio>
+    <h1>🚀 Transfer Game Earnings</h1>
+    <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.wav" preload="auto"></audio>
+    <div id="main-content" style="display: none;">
+      <div class="card">
+        <p><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></p>
+        <p><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></p>
+        <p><strong>Synchronized Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></p>
+        <hr style="border-color: #0ff; margin: 15px 0;">
+        <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
+        <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
+      </div>
+    </div>
+    
+    <!-- Unified Wallet & Alert Modal -->
+    <div class="app-modal" id="appModal">
+        <div class="modal-inner">
+            <h3 id="modalTitle" style="color:#00ffff; text-shadow:0 0 10px #00ffff;"></h3>
+            <p id="modalMessage" style="margin-top: 10px;"></p>
+            <button class="modal-btn" id="modalBtn1" style="display:none;"></button>
+            <button class="modal-btn" id="modalBtn2" style="display:none;"></button>
+            <button class="modal-btn" id="modalBtn3" style="display:none;"></button>
+            <div id="modalCloseBtn" class="close-modal">Close</div>
+        </div>
+    </div>
 
-<button id="connectBtn" class="btn">Connect Wallet</button>
-<button id="browserConnectBtn" class="btn browser-btn">Browser Connection</button>
+    <script>
+        // --- Custom Modal Functions ---
+        /**
+         * Displays a custom modal with a title, message, and optional buttons.
+         * @param {string} title The title of the modal.
+         * @param {string} message The main message of the modal.
+         * @param {Array<Object>} buttons An array of button objects, e.g., [{text: "OK", handler: () => { ... }}].
+         */
+        function showModal(title, message, buttons) {
+            const modal = document.getElementById('appModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
 
-<div class="card" id="transferCard" style="display:none">
-  <div><strong>Wallet:</strong> <span id="walletAddress">Not Connected</span></div>
-  <div><strong>Claimed TIFFY:</strong> <span id="claimed">0</span></div>
-  <div><strong>Game Earnings:</strong> <span id="tetris">0</span></div>
-  <div><strong>Total Withdrawable:</strong> <span id="total">0</span></div>
-  <button class="btn withdraw-btn" id="withdrawBtn">Withdraw</button>
-</div>
+            // Reset buttons
+            const btns = [document.getElementById('modalBtn1'), document.getElementById('modalBtn2'), document.getElementById('modalBtn3')];
+            btns.forEach(btn => {
+                btn.style.display = 'none';
+                btn.onclick = null;
+            });
+            
+            // Set up new buttons if they exist
+            if (buttons && buttons.length > 0) {
+                buttons.forEach((btn, index) => {
+                    const modalBtn = btns[index];
+                    modalBtn.textContent = btn.text;
+                    modalBtn.onclick = btn.handler;
+                    modalBtn.style.display = 'block';
+                });
+            }
 
-<div class="wallet-popup" id="walletPopup">
-  <div class="wallet-popup-inner">
-    <button class="wallet-btn" onclick="launchWallet('metamask')">MetaMask</button>
-    <button class="wallet-btn" onclick="launchWallet('trust')">Trust Wallet</button>
-    <button class="wallet-btn" onclick="launchWallet('okx')">OKX Wallet</button>
-    <div class="close-popup" onclick="closePopup()">Close</div>
-  </div>
-</div>
+            document.getElementById('modalCloseBtn').onclick = () => modal.style.display = 'none';
+            modal.style.display = 'flex';
+        }
 
-<script>
-(async ()=>{
-  const cAddr = "0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5";
-  const ABI = [
-    {inputs:[],name:"claim",outputs:[],stateMutability:"payable",type:"function"},
-    {inputs:[],name:"FIXED_BNB_FEE",outputs:[{internalType:"uint256",name:"",type:"uint256"}],stateMutability:"view",type:"function"}
-  ];
-  const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
-  let web3, provider, account, contract, fee;
+        // --- Core Application Logic ---
+        const E = {
+            clickSound: document.getElementById('clickSound'),
+            mainContent: document.getElementById('main-content'),
+            withdrawBtn: document.getElementById('withdrawBtn'),
+            walletAddressDisplay: document.getElementById('walletAddressDisplay'),
+            claimedTIFFYDisplay: document.getElementById('claimedTIFFYDisplay'),
+            synchronizedEarningsDisplay: document.getElementById('synchronizedEarningsDisplay'),
+            totalWithdrawableDisplay: document.getElementById('totalWithdrawableDisplay')
+        };
+        
+        let web3, account, contract, provider;
+        let totalWithdrawableAmount = 0;
+        const cAddr = "0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5";
+        const ABI = [
+            {"inputs":[],"name":"claim","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[],"name":"FIXED_BNB_FEE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ];
+        const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
+        const DEEPLINK_BASE_URL = window.location.href.split('?')[0];
 
-  const clickSound = document.getElementById("clickSound");
-  const wModal = new Web3Modal.default({
-    cacheProvider:false,
-    providerOptions:{ walletconnect:{ package:window.WalletConnectProvider?.default||{}, options:{ rpc:{56:"https://bsc-dataseed.binance.org/"}}}}
-  });
+        /**
+         * Reads the balance from local storage and updates the UI.
+         */
+        function loadBalances() {
+            // This is the correct logic. It only reads from local storage without writing to it.
+            const claimedTIFFY = parseFloat(localStorage.getItem('claimedTIFFY') || 0);
+            const synchronizedEarnings = parseFloat(localStorage.getItem('synchronizedEarnings') || 0);
+            totalWithdrawableAmount = claimedTIFFY + synchronizedEarnings;
 
-  function getClaimed(){
-    const key = account ? `tiffyClaimed_${account}` : "tiffyClaimed_browser";
-    return parseFloat(localStorage.getItem(key) || "0");
-  }
-  function getTetris(){
-    return parseFloat(localStorage.getItem("tetrusScore") || "0");
-  }
-  function loadBalances(){
-    const claimed = getClaimed();
-    const tetris = getTetris();
-    const total = claimed + tetris;
-    document.getElementById("claimed").textContent = claimed.toFixed(2);
-    document.getElementById("tetris").textContent = tetris.toFixed(2);
-    document.getElementById("total").textContent = total.toFixed(2);
-  }
+            E.claimedTIFFYDisplay.textContent = claimedTIFFY.toFixed(2);
+            E.synchronizedEarningsDisplay.textContent = synchronizedEarnings.toFixed(2);
+            E.totalWithdrawableDisplay.textContent = totalWithdrawableAmount.toFixed(2);
 
-  // New functions for the pop-up
-  function openPopup() {
-    document.getElementById('walletPopup').style.display = 'flex';
-  }
+            if (totalWithdrawableAmount <= 0) {
+                E.withdrawBtn.disabled = true;
+                E.withdrawBtn.textContent = "No Funds to Withdraw";
+            } else {
+                E.withdrawBtn.disabled = false;
+                E.withdrawBtn.textContent = "Withdraw Funds";
+            }
+        }
 
-  function closePopup() {
-    document.getElementById('walletPopup').style.display = 'none';
-  }
-  
-  function launchWallet(wallet) {
-    const currentUrl = window.location.href;
-    closePopup();
+        // Function to show the wallet selection modal
+        function openWalletPopup() {
+            E.clickSound.play();
+            if (totalWithdrawableAmount <= 0) {
+                showModal("No Funds", "There are no funds to withdraw. Please play to earn more.", null);
+                return;
+            }
 
-    switch(wallet) {
-      case 'metamask':
-        window.location.href = `https://metamask.app.link/dapp/${currentUrl}`;
-        break;
-      case 'trust':
-        window.location.href = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`;
-        break;
-      case 'okx':
-        window.location.href = `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(currentUrl)}`;
-        break;
-    }
-  }
+            showModal("Choose a Wallet", "Please select your preferred wallet to complete the withdrawal.", [
+                { text: "MetaMask", handler: () => connectAndWithdraw('metamask', totalWithdrawableAmount) },
+                { text: "Trust Wallet", handler: () => connectAndWithdraw('trust', totalWithdrawableAmount) },
+                { text: "OKX Wallet", handler: () => connectAndWithdraw('okx', totalWithdrawableAmount) }
+            ]);
+        }
 
-  // Keep original connection functions but adapt the flow
-  async function connectWallet(){
-    provider = await wModal.connect();
-    web3 = new Web3(provider);
-    const cid = await web3.eth.getChainId();
-    if(cid !== 56){
-      try { await provider.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0x38"}] }); }
-      catch(e){ alert("Please switch to BNB Smart Chain"); throw e; }
-    }
-    const accts = await web3.eth.getAccounts();
-    account = accts[0];
-    document.getElementById("walletAddress").textContent = `${account.slice(0,6)}...${account.slice(-4)}`;
-    contract = new web3.eth.Contract(ABI, cAddr);
-    fee = await contract.methods.FIXED_BNB_FEE().call();
-  }
+        // Logic for deep-linking
+        function connectAndWithdraw(walletType, amount) {
+            document.getElementById('appModal').style.display = 'none';
+            
+            const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
+            
+            let deepLink;
+            switch(walletType) {
+                case 'metamask':
+                    deepLink = `https://metamask.app.link/dapp/${encodeURIComponent(fullUrl)}`;
+                    break;
+                case 'trust':
+                    deepLink = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(fullUrl)}`;
+                    break;
+                case 'okx':
+                    deepLink = `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(fullUrl)}`;
+                    break;
+                default:
+                    showModal("Error", "Invalid wallet selected.", null);
+                    return;
+            }
 
-  async function withdraw(){
-    const key = `tiffyClaimed_${account}`;
-    let cnt = getClaimed() + getTetris();
-    if(cnt <= 0) return;
-    try {
-      await contract.methods.claim().send({ from:account, value:fee });
-      const backendAmt = cnt - 1;
-      if(backendAmt > 0){
-        await fetch(BACKEND,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({wallet:account,amount:backendAmt})});
-      }
-      localStorage.setItem(key,"0");
-      localStorage.setItem("tetrusScore","0");
-      loadBalances();
-      alert("✅ Withdrawal Complete!");
-    } catch(e){ alert("❌ Withdraw failed: "+(e.message||e)); }
-  }
+            console.log("Deep link URL generated:", deepLink);
+            window.location.href = deepLink;
+        }
 
-  // Initial setup when the page loads
-  (async function init(){
-    // Check if a wallet provider is already injected (meaning we are in a dApp browser)
-    if (window.ethereum || window.web3) {
-      await connectWallet();
-      document.getElementById("connectBtn").style.display = "none";
-      document.getElementById("browserConnectBtn").style.display = "none";
-      document.getElementById("transferCard").style.display = "inline-block";
-      loadBalances();
-      
-      // Auto-call withdraw() after wallet is connected.
-      // This is the core of the new logic.
-      await withdraw();
-    } else {
-      // If no wallet is injected, show the initial buttons
-      document.getElementById("transferCard").style.display = "inline-block";
-      loadBalances();
-    }
-  })();
+        // Function to switch to BNB Chain
+        async function switchToBNB() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x38' }], // 0x38 is the hex for 56
+                });
+                return true;
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x38',
+                                chainName: 'BNB Smart Chain',
+                                rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                                nativeCurrency: {
+                                    name: 'BNB',
+                                    symbol: 'BNB',
+                                    decimals: 18
+                                },
+                                blockExplorerUrls: ['https://bscscan.com']
+                            }]
+                        });
+                        return true;
+                    } catch (addError) {
+                        console.error("Failed to add BNB Chain:", addError);
+                        return false;
+                    }
+                }
+                console.error("Failed to switch to BNB Chain:", switchError);
+                return false;
+            }
+        }
 
-  // Updated button click handlers for the new user flow
-  document.getElementById("connectBtn").onclick = async() => {
-    clickSound.play();
-    await connectWallet();
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    loadBalances();
-  };
+        // The core withdrawal function
+        async function withdraw(amount) {
+            E.withdrawBtn.disabled = true;
+            E.withdrawBtn.textContent = "Processing...";
+            E.clickSound.play();
 
-  document.getElementById("browserConnectBtn").onclick = () => {
-    clickSound.play();
-    account = null;
-    document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
-    loadBalances();
-  };
+            try {
+                const contractFee = await contract.methods.FIXED_BNB_FEE().call();
+                
+                await contract.methods.claim().send({
+                    from: account,
+                    value: contractFee
+                });
 
-  document.getElementById("withdrawBtn").onclick = async () => {
-    clickSound.play();
-    if(!account) {
-        // If no account is connected yet, open the wallet popup to deep-link.
-        // This is the key difference for the new flow.
-        openPopup();
-    } else {
-        // If an account is already connected, just call withdraw.
-        await withdraw();
-    }
-  };
-})();
-</script>
+                if (amount > 0) {
+                    await fetch(BACKEND, {
+                        method: "POST",
+                        headers: {"Content-Type":"application/json"},
+                        body: JSON.stringify({ wallet: account, amount: amount })
+                    }).catch(e => console.error("Backend log failed:", e));
+                }
 
+                // This is the logic to reset the claimed amount to 0 after a successful withdrawal.
+                localStorage.setItem('claimedTIFFY', "0");
+                localStorage.setItem('synchronizedEarnings', "0");
+                
+                showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null);
+                
+            } catch (e) {
+                showModal("Withdrawal Failed", `❌ Withdraw failed: ${e.message || e}`, null);
+                console.error("Withdrawal error:", e);
+            } finally {
+                E.withdrawBtn.disabled = false;
+                E.withdrawBtn.textContent = "Withdraw Funds";
+            }
+        }
+
+        // Initial setup and event listeners
+        window.addEventListener('load', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const walletParam = params.get('wallet');
+            const amountParam = params.get('amount');
+
+            // --- IMPORTANT CHANGE: REMOVED ALL HARDCODED LOCAL STORAGE SETTINGS ---
+            // The app will now read your actual balances from local storage.
+            
+            loadBalances();
+            E.mainContent.style.display = 'block';
+
+            if (walletParam && amountParam) {
+                E.withdrawBtn.style.display = 'none';
+                E.totalWithdrawableDisplay.textContent = 'Connecting...';
+
+                try {
+                    if (typeof window.ethereum === 'undefined') {
+                        throw new Error("Please open this page in your mobile wallet's browser.");
+                    }
+                    
+                    provider = window.ethereum;
+                    web3 = new Web3(provider);
+
+                    E.totalWithdrawableDisplay.textContent = 'Switching to BNB Chain...';
+                    const isBnbChain = await switchToBNB();
+                    if (!isBnbChain) {
+                        E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
+                        throw new Error("Failed to switch to BNB chain.");
+                    }
+
+                    E.totalWithdrawableDisplay.textContent = 'Requesting wallet access...';
+                    const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                    account = accounts[0];
+
+                    E.walletAddressDisplay.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+
+                    contract = new web3.eth.Contract(ABI, cAddr);
+
+                    // Call the withdraw function with the amount from the URL
+                    await withdraw(parseFloat(amountParam));
+
+                } catch (e) {
+                    showModal("Connection Error", e.message || "Something went wrong while connecting your wallet.", null);
+                    E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
+                    console.error("Connection flow failed:", e);
+                } finally {
+                    E.withdrawBtn.style.display = 'block';
+                    loadBalances(); // Reload balances to reflect any changes
+                }
+            } else {
+                E.withdrawBtn.style.display = 'block';
+            }
+        });
+
+        E.withdrawBtn.onclick = openWalletPopup;
+    </script>
 </body>
 </html>
