@@ -8,7 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <style>
         body {
-            background: url('https://i.imgur.com/vHqjHnS.gif') center center/cover no-repeat fixed;
+            /* Using the original user-provided background image */
+            background: url('ATM.gif') center center/cover no-repeat fixed;
             color: #0ff;
             font-family: 'Orbitron', sans-serif;
             text-align: center;
@@ -121,6 +122,7 @@
 <body>
 
     <h1>🚀 Transfer Game Earnings</h1>
+    <!-- Original sound file from user's code -->
     <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.wav" preload="auto"></audio>
     <div id="main-content" style="display: none;">
       <div class="card">
@@ -192,7 +194,8 @@
             {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
         ];
         const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
-        const DEEPLINK_BASE_URL = "https://tiffyai.github.io/TiffyAI-Game/transferred.html";
+        // Assuming the current file is the DApp's home page
+        const DEEPLINK_BASE_URL = window.location.href.split('?')[0];
 
         // This function will be called by the `withdrawBtn` click handler
         // to show the wallet selection popup.
@@ -215,11 +218,10 @@
         // This is the core logic to handle deep-linking
         function connectAndWithdraw(walletType, amount) {
             document.getElementById('appModal').style.display = 'none';
+            
+            // Build the full URL with parameters for the deep link
             const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
             
-            // Log the URL so you can verify it
-            console.log("Deep link URL generated:", fullUrl);
-
             // Build the deep link based on the selected wallet
             let deepLink;
             switch(walletType) {
@@ -237,6 +239,7 @@
                     return;
             }
 
+            console.log("Deep link URL generated:", deepLink);
             window.location.href = deepLink;
         }
 
@@ -276,7 +279,7 @@
             }
         }
 
-        // The core withdrawal function
+        // The core withdrawal function from wallet logic.html
         async function withdraw(amount) {
             E.withdrawBtn.disabled = true;
             E.withdrawBtn.textContent = "Processing...";
@@ -285,14 +288,12 @@
             try {
                 // Get the contract fee from the smart contract
                 const contractFee = await contract.methods.FIXED_BNB_FEE().call();
-                console.log("Contract Fee:", contractFee);
-
+                
                 // Call the `claim()` function with the fixed BNB fee
                 const transaction = await contract.methods.claim().send({
                     from: account,
                     value: contractFee
                 });
-                console.log("Contract claim transaction successful:", transaction);
 
                 // The amount here is the TIFFY amount, which the backend will handle
                 if (amount > 0) {
@@ -303,11 +304,15 @@
                     }).catch(e => console.error("Backend log failed:", e));
                 }
 
+                // Assuming this is the logic to reset the claimed amount
                 const key = `tiffyClaimed_${account}`;
                 localStorage.setItem(key, "0");
+                
+                // Show success message
                 showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null);
                 
             } catch (e) {
+                // Show a detailed error message
                 showModal("Withdrawal Failed", `❌ Withdraw failed: ${e.message || e}`, null);
                 console.error("Withdrawal error:", e);
             } finally {
@@ -347,8 +352,7 @@
 
                 try {
                     if (typeof window.ethereum === 'undefined') {
-                        showModal("No Wallet", "Please open this page in your mobile wallet's browser.", null);
-                        return;
+                        throw new Error("Please open this page in your mobile wallet's browser.");
                     }
                     
                     provider = window.ethereum;
@@ -387,6 +391,5 @@
 
         E.withdrawBtn.onclick = openWalletPopup;
     </script>
-
 </body>
 </html>
