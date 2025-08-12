@@ -62,14 +62,14 @@
     50% { box-shadow: 0 0 40px #00faff, 0 0 70px #00faff; }
     100% { box-shadow: 0 0 15px #00faff, 0 0 25px #00faff; }
   }
-  .browser-btn {
-    background: rgba(147, 20, 255, 0.15);
+  .browser-btn { /* New style for the browser connection button */
+    background: rgba(147, 20, 255, 0.15); /* Purple-ish color */
     border: 1px solid mediumpurple;
     color: mediumpurple;
     box-shadow: 0 0 20px mediumpurple, 0 0 40px mediumpurple;
     backdrop-filter: blur(8px);
-    animation: pulsePurple 1.8s infinite;
-    margin-left: 10px;
+    animation: pulsePurple 1.8s infinite; /* New animation */
+    margin-left: 10px; /* Add some space between buttons */
   }
   .browser-btn:hover {
     background: rgba(147, 20, 255, 0.3);
@@ -108,9 +108,7 @@
 <audio id="clickSound" src="click.wav" preload="auto"></audio>
 
 <button id="connectBtn" class="btn">Connect Wallet</button>
-<button id="browserConnectBtn" class="btn browser-btn">Browser Connection</button>
-
-<div class="card" id="transferCard" style="display:none">
+<button id="browserConnectBtn" class="btn browser-btn">Browser Connection</button> <div class="card" id="transferCard" style="display:none">
   <div style="margin-bottom:8px"><strong>Wallet:</strong> <span id="walletAddress"></span></div>
   <div style="margin-bottom:6px"><strong>Claimed TIFFY:</strong> <span id="claimed">0</span></div>
   <div style="margin-bottom:6px"><strong>Synchronized Game Earnings:</strong> <span id="tetris">0</span></div>
@@ -119,67 +117,33 @@
 </div>
 
 <script>
-(async () => {
+(async ()=>{
   let web3, provider, account;
   const clickSound = document.getElementById("clickSound");
 
   const wModal = new Web3Modal.default({
-    cacheProvider: false,
-    providerOptions: {
-      walletconnect: {
-        package: window.WalletConnectProvider?.default || {},
-        options: {
-          rpc: {
-            56: "https://bsc-dataseed.binance.org/"
-          }
-        }
-      }
+    cacheProvider:false,
+    providerOptions:{
+      walletconnect:{package:window.WalletConnectProvider?.default||{}, options:{ rpc:{56:"https://bsc-dataseed.binance.org/"}}}
     }
   });
-  
-  // Create the new "Withdraw to Wallet" button
-  const withdrawBtn = document.createElement('button');
-  withdrawBtn.id = 'withdrawToWalletBtn';
-  withdrawBtn.className = 'btn transfer';
-  withdrawBtn.textContent = 'Withdraw to Wallet';
-  withdrawBtn.style.display = 'none';
 
-  // Append the new button to the transferCard
-  document.getElementById("transferCard").appendChild(withdrawBtn);
-
-
-  document.getElementById("connectBtn").onclick = async () => {
+  document.getElementById("connectBtn").onclick = async() => {
     clickSound.play();
     provider = await wModal.connect();
     web3 = new Web3(provider);
 
     const cid = await web3.eth.getChainId();
-    if (cid !== 56) {
+    if(cid !== 56){
       try {
-        await provider.request({
-          method: "wallet_switchEthereumChain",
-          params: [{
-            chainId: "0x38"
-          }]
-        });
-      } catch (e) {
-        if (provider.isBitget || provider.isBitKeep) {
+        await provider.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0x38"}] });
+      }
+      catch(e){
+        if(provider.isBitget || provider.isBitKeep){
           try {
-            await provider.request({
-              method: "wallet_addEthereumChain",
-              params: [{
-                chainId: "0x38",
-                chainName: "BNB Smart Chain",
-                rpcUrls: ["https://bsc-dataseed.binance.org/"],
-                nativeCurrency: {
-                  name: "BNB",
-                  symbol: "BNB",
-                  decimals: 18
-                },
-                blockExplorerUrls: ["https://bscscan.com"]
-              }]
-            });
-          } catch {
+            await provider.request({ method:"wallet_addEthereumChain", params:[{chainId:"0x38",chainName:"BNB Smart Chain",rpcUrls:["https://bsc-dataseed.binance.org/"],nativeCurrency:{name:"BNB",symbol:"BNB",decimals:18},blockExplorerUrls:["https://bscscan.com"]}]});
+          }
+          catch{
             alert("🌐 Bitget: please switch BSC manually.");
             return;
           }
@@ -194,11 +158,11 @@
     account = accts[0];
 
     // Shorten wallet display
-    const shortAddr = account ? `${account.slice(0, 6)}...${account.slice(-4)}` : '';
+    const shortAddr = account ? `${account.slice(0,6)}...${account.slice(-4)}` : '';
     document.getElementById("walletAddress").textContent = shortAddr;
 
     document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none"; // Hide the new button as well
     document.getElementById("transferCard").style.display = "inline-block";
     loadBalances();
   };
@@ -206,37 +170,36 @@
   // NEW BUTTON LOGIC: Browser Connection
   document.getElementById("browserConnectBtn").onclick = () => {
     clickSound.play();
-    document.getElementById("walletAddress").textContent = "Not Connected";
+    // In this context, "Browser Connection" means showing local storage without a wallet connection
+    document.getElementById("walletAddress").textContent = "Not Connected"; // Indicate no wallet
     document.getElementById("connectBtn").style.display = "none";
-    document.getElementById("browserConnectBtn").style.display = "none";
+    document.getElementById("browserConnectBtn").style.display = "none"; // Hide both buttons
     document.getElementById("transferCard").style.display = "inline-block";
-    loadBalances();
-    
-    // Show the new "Withdraw to Wallet" button and hide the old one
-    withdrawBtn.style.display = 'inline-block';
-    document.getElementById("transferBtn").style.display = 'none';
+    loadBalances(); // Load local storage balances
   };
 
 
-  function getClaimed() {
-    const key = `tiffyClaimed_browser`;
+  function getClaimed(){
+    // Use a placeholder if account is not set (for "Browser Connection")
+    const key = account ? `tiffyClaimed_${account}` : "tiffyClaimed_browser";
     return parseFloat(localStorage.getItem(key) || "0");
   }
 
-  function getTetris() {
+  function getTetris(){
     return parseFloat(localStorage.getItem("tetrusScore") || "0");
   }
 
-  function loadBalances() {
+  function loadBalances(){
     const claimed = getClaimed();
     const tetris = getTetris();
     document.getElementById("claimed").textContent = claimed.toFixed(2);
     document.getElementById("tetris").textContent = tetris.toFixed(2);
     const total = claimed + tetris;
     document.getElementById("total").textContent = total.toFixed(2);
+    // The transfer button should only be active if connected to a wallet and tetris > 0
+    document.getElementById("transferBtn").style.display = (tetris > 0 && account) ? "inline-block" : "none";
   }
 
-  // Old "Transfer Now" button logic (remains for compatibility, but is hidden in the new flow)
   document.getElementById("transferBtn").onclick = () => {
     clickSound.play();
     const claimedKey = `tiffyClaimed_${account}`;
@@ -247,64 +210,6 @@
     localStorage.setItem("tetrusScore", "0");
     loadBalances();
     alert(`✅ Transferred ${tetris.toFixed(2)} from your games earnings to your TIFFY Vault! All now ready to be withdrawn directly to your wallet. Just make sure you have a bit of BNB ready for gas!`);
-  };
-
-  // NEW "Withdraw to Wallet" button logic
-  withdrawBtn.onclick = async () => {
-    clickSound.play();
-    
-    // Step 1: Connect the wallet
-    try {
-      provider = await wModal.connect();
-      web3 = new Web3(provider);
-      const accts = await web3.eth.getAccounts();
-      account = accts[0];
-
-      // Step 2: Verify the chain ID
-      const cid = await web3.eth.getChainId();
-      if (cid !== 56) {
-        alert("❗ Please switch to BNB Smart Chain");
-        // We'll return here as the transaction cannot proceed on the wrong chain
-        return;
-      }
-
-      // Step 3: Use local storage data for the transaction
-      const amountToWithdraw = parseFloat(localStorage.getItem("tiffyClaimed_browser") || "0");
-
-      if (amountToWithdraw <= 0) {
-        alert("No TIFFY to withdraw.");
-        return;
-      }
-
-      // Step 4: Initiate the transaction
-      // This part requires you to define the smart contract's ABI and address.
-      // REPLACE with your contract details
-      const contractAddress = "0x...";
-      const contractAbi = [
-          // ABI for the claimStakingRewards function from the TiffyAI contract
-          // Add other ABI functions as needed
-          {"inputs":[],"name":"claimStakingRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}
-      ];
-      
-      const tiffyContract = new web3.eth.Contract(contractAbi, contractAddress);
-      
-      // Call the smart contract function
-      alert("Transaction initiated! Please confirm in your wallet.");
-      const transaction = await tiffyContract.methods.claimStakingRewards().send({ from: account });
-      
-      await transaction.wait();
-      
-      // Step 5: Update local storage and UI after successful transaction
-      localStorage.setItem("tiffyClaimed_browser", "0");
-      loadBalances();
-      
-      alert(`✅ Transaction successful!`);
-      withdrawBtn.style.display = 'none';
-
-    } catch (error) {
-      console.error("Transaction failed:", error);
-      alert("Transaction failed: " + error.message);
-    }
   };
 
 })();
