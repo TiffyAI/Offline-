@@ -170,7 +170,7 @@
       <div class="card">
         <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
         <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
-        <div><strong>Wallet Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
+        <div><strong id="gameEarningsLabel">Browser Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
         <hr style="border-color: #0ff; margin: 15px 0;">
         <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
         <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
@@ -237,7 +237,8 @@
             claimedTIFFYDisplay: document.getElementById('claimedTIFFYDisplay'),
             synchronizedEarningsDisplay: document.getElementById('synchronizedEarningsDisplay'),
             totalWithdrawableDisplay: document.getElementById('totalWithdrawableDisplay'),
-            processingBar: document.getElementById('processing-bar')
+            processingBar: document.getElementById('processing-bar'),
+            gameEarningsLabel: document.getElementById('gameEarningsLabel') // New element reference
         };
         
         let web3, account, contract, provider;
@@ -424,7 +425,7 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
             
-            loadBalances();
+            loadBalances(); // Load initial balances
             E.mainContent.style.display = 'block';
 
             if (walletParam && amountParam) {
@@ -433,6 +434,7 @@
                 E.totalWithdrawableDisplay.classList.add('processing-text');
                 E.processingBar.style.display = 'block';
                 E.processingBar.textContent = 'Connecting to Wallet...';
+                E.gameEarningsLabel.textContent = 'Wallet Game Earnings:'; // Change label to Wallet Game Earnings
 
                 try {
                     if (typeof window.ethereum === 'undefined') {
@@ -478,13 +480,19 @@
                     E.withdrawBtn.style.display = 'block';
                     E.processingBar.style.display = 'none';
                     loadBalances();
+                    // Reset label if connection fails and no wallet is connected
+                    if (!account) {
+                         E.gameEarningsLabel.textContent = 'Browser Game Earnings:';
+                    }
                 }
             } else {
                 E.withdrawBtn.style.display = 'block';
+                // Ensure it's "Browser Game Earnings" when no wallet is connected initially
+                E.gameEarningsLabel.textContent = 'Browser Game Earnings:'; 
             }
         });
 
         E.withdrawBtn.onclick = openWalletPopup;
     </script>
 </body>
-</html>
+</html>b
