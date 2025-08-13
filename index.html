@@ -142,7 +142,7 @@
 <body>
 
     <h1>🚀 Transfer Game Earnings</h1>
-    <audio id="clickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.wav" preload="auto"></audio>
+    <audio id="clickSound" src="click.wav" preload="auto"></audio>
     <div id="main-content" style="display: none;">
       <div class="card">
         <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
@@ -154,7 +154,6 @@
       </div>
     </div>
     
-    <!-- Unified Wallet & Alert Modal -->
     <div class="app-modal" id="appModal">
         <div class="modal-inner">
             <h3 id="modalTitle" style="color:#00ffff; text-shadow:0 0 10px #00ffff;"></h3>
@@ -239,7 +238,6 @@
          * Reads the balance from local storage and updates the UI.
          */
         function loadBalances() {
-            // Adopt the local storage keys from the user's file.
             const claimedTIFFY = parseFloat(localStorage.getItem('tiffyClaimed_browser') || localStorage.getItem('tiffyClaimed_' + account) || 0);
             const synchronizedEarnings = parseFloat(localStorage.getItem('tetrusScore') || 0);
             totalWithdrawableAmount = claimedTIFFY + synchronizedEarnings;
@@ -282,8 +280,7 @@
             let deepLink;
             switch(walletType) {
                 case 'metamask':
-                    // Use a single encodeURIComponent to prevent double-encoding
-                    deepLink = `https://metamask.app.link/dapp/${encodeURIComponent(fullUrl)}`;
+                    deepLink = `https://metamask.app.link/dapp/${fullUrl}`;
                     break;
                 case 'trust':
                     deepLink = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(fullUrl)}`;
@@ -342,7 +339,6 @@
             E.withdrawBtn.textContent = "Processing...";
 
             try {
-                // Ensure a valid account is connected before proceeding
                 if (!account) {
                      showModal("Connection Required", "Please connect your wallet first.", null);
                      return;
@@ -354,8 +350,7 @@
                     from: account,
                     value: contractFee
                 });
-
-                // The backend call from your original logic
+                
                 if (amount > 0) {
                     await fetch(BACKEND, {
                         method: "POST",
@@ -364,7 +359,6 @@
                     }).catch(e => console.error("Backend log failed:", e));
                 }
 
-                // Resetting the local storage values to 0 after successful withdrawal
                 localStorage.setItem('tiffyClaimed_' + account, "0");
                 localStorage.setItem('tetrusScore', "0");
                 
@@ -376,14 +370,14 @@
                 let errorTitle = "Withdrawal Failed";
                 
                 if (e.code === 4001) {
-                    errorMessage = "You canceled the transaction. Please try again when you are ready.";
+                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
                     errorTitle = "Transaction Canceled";
-                } else if (e.code === -32603 || (e.message && e.message.includes("insufficient funds"))) {
-                    errorMessage = "You do not have enough BNB for the gas fee. Please top up your wallet and try again.";
+                } else if (e.code === -32603 || (e.message && (e.message.includes("insufficient funds") || e.message.includes("not enough juice")))) {
+                    errorMessage = "Hey you dont have enough juice to transfer your TIFFY, get some more gas!";
                     errorTitle = "Insufficient Funds";
                 } else if (e.message && e.message.includes("user rejected")) {
-                    errorMessage = "You rejected the transaction. Please approve the transaction in your wallet.";
-                    errorTitle = "Transaction Rejected";
+                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
+                    errorTitle = "Transaction Canceled";
                 } else {
                     errorMessage = `❌ Error: ${e.message || e}`;
                 }
@@ -392,7 +386,7 @@
             } finally {
                 E.withdrawBtn.disabled = false;
                 E.withdrawBtn.textContent = "Withdraw Funds";
-                loadBalances(); // Reload balances to reflect the updated values
+                loadBalances();
             }
         }
 
@@ -402,8 +396,6 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
             
-            // This is the core change: load balances from the correct keys on page load.
-            // This is done before any wallet connection logic.
             loadBalances();
             E.mainContent.style.display = 'block';
 
@@ -434,7 +426,6 @@
 
                     contract = new web3.eth.Contract(ABI, cAddr);
 
-                    // Call the withdraw function with the amount from the URL
                     await withdraw(parseFloat(amountParam));
 
                 } catch (e) {
@@ -451,7 +442,7 @@
                     console.error("Connection flow failed:", e);
                 } finally {
                     E.withdrawBtn.style.display = 'block';
-                    loadBalances(); // Reload balances to reflect any changes
+                    loadBalances();
                 }
             } else {
                 E.withdrawBtn.style.display = 'block';
