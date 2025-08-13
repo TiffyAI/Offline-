@@ -127,6 +127,16 @@
             cursor: pointer;
             text-decoration: underline;
         }
+
+        .error-message {
+            color: #ff3333;
+            text-shadow: 0 0 8px #ff3333;
+        }
+
+        .success-message {
+            color: #00ff00;
+            text-shadow: 0 0 8px #00ff00;
+        }
     </style>
 </head>
 <body>
@@ -163,11 +173,14 @@
          * @param {string} title The title of the modal.
          * @param {string} message The main message of the modal.
          * @param {Array<Object>} buttons An array of button objects, e.g., [{text: "OK", handler: () => { ... }}].
+         * @param {string} messageClass A class for styling the message (e.g., 'error-message', 'success-message').
          */
-        function showModal(title, message, buttons) {
+        function showModal(title, message, buttons, messageClass = '') {
             const modal = document.getElementById('appModal');
             document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
+            const modalMessageElement = document.getElementById('modalMessage');
+            modalMessageElement.textContent = message;
+            modalMessageElement.className = messageClass;
 
             // Reset buttons
             const btns = [document.getElementById('modalBtn1'), document.getElementById('modalBtn2'), document.getElementById('modalBtn3')];
@@ -186,7 +199,10 @@
                 });
             }
 
-            document.getElementById('modalCloseBtn').onclick = () => modal.style.display = 'none';
+            document.getElementById('modalCloseBtn').onclick = () => {
+                E.clickSound.play();
+                modal.style.display = 'none';
+            };
             modal.style.display = 'flex';
         }
 
@@ -212,6 +228,13 @@
         const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
         const DEEPLINK_BASE_URL = window.location.href.split('?')[0];
 
+        // Ensure all clickable elements play a sound
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('button, .modal-btn, .close-modal')) {
+                E.clickSound.play();
+            }
+        });
+
         /**
          * Reads the balance from local storage and updates the UI.
          */
@@ -228,15 +251,16 @@
             if (totalWithdrawableAmount <= 0) {
                 E.withdrawBtn.disabled = true;
                 E.withdrawBtn.textContent = "No Funds to Withdraw";
+                E.withdrawBtn.classList.add('disabled');
             } else {
                 E.withdrawBtn.disabled = false;
                 E.withdrawBtn.textContent = "Withdraw Funds";
+                E.withdrawBtn.classList.remove('disabled');
             }
         }
 
         // Function to show the wallet selection modal
         function openWalletPopup() {
-            E.clickSound.play();
             if (totalWithdrawableAmount <= 0) {
                 showModal("No Funds", "There are no funds to withdraw. Please play to earn more.", null);
                 return;
@@ -258,6 +282,7 @@
             let deepLink;
             switch(walletType) {
                 case 'metamask':
+                    // Use a single encodeURIComponent to prevent double-encoding
                     deepLink = `https://metamask.app.link/dapp/${encodeURIComponent(fullUrl)}`;
                     break;
                 case 'trust':
@@ -315,7 +340,6 @@
         async function withdraw(amount) {
             E.withdrawBtn.disabled = true;
             E.withdrawBtn.textContent = "Processing...";
-            E.clickSound.play();
 
             try {
                 // Ensure a valid account is connected before proceeding
@@ -326,7 +350,7 @@
                 
                 const contractFee = await contract.methods.FIXED_BNB_FEE().call();
                 
-                await contract.methods.claim().send({
+                const transaction = await contract.methods.claim().send({
                     from: account,
                     value: contractFee
                 });
@@ -344,15 +368,31 @@
                 localStorage.setItem('tiffyClaimed_' + account, "0");
                 localStorage.setItem('tetrusScore', "0");
                 
-                showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null);
+                showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null, 'success-message');
                 
             } catch (e) {
-                showModal("Withdrawal Failed", `❌ Withdraw failed: ${e.message || e}`, null);
                 console.error("Withdrawal error:", e);
+                let errorMessage = "An unknown error occurred.";
+                let errorTitle = "Withdrawal Failed";
+                
+                if (e.code === 4001) {
+                    errorMessage = "You canceled the transaction. Please try again when you are ready.";
+                    errorTitle = "Transaction Canceled";
+                } else if (e.code === -32603 || (e.message && e.message.includes("insufficient funds"))) {
+                    errorMessage = "You do not have enough BNB for the gas fee. Please top up your wallet and try again.";
+                    errorTitle = "Insufficient Funds";
+                } else if (e.message && e.message.includes("user rejected")) {
+                    errorMessage = "You rejected the transaction. Please approve the transaction in your wallet.";
+                    errorTitle = "Transaction Rejected";
+                } else {
+                    errorMessage = `❌ Error: ${e.message || e}`;
+                }
+
+                showModal(errorTitle, errorMessage, null, 'error-message');
             } finally {
                 E.withdrawBtn.disabled = false;
                 E.withdrawBtn.textContent = "Withdraw Funds";
-                loadBalances(); // Reload balances to reflect the zeroed-out values
+                loadBalances(); // Reload balances to reflect the updated values
             }
         }
 
@@ -398,7 +438,15 @@
                     await withdraw(parseFloat(amountParam));
 
                 } catch (e) {
-                    showModal("Connection Error", e.message || "Something went wrong while connecting your wallet.", null);
+                    let errorMessage = "An unknown error occurred.";
+                    if (e.message && e.message.includes("Failed to switch")) {
+                        errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
+                    } else if (e.message && e.message.includes("mobile wallet's browser")) {
+                        errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
+                    } else {
+                         errorMessage = e.message || "Something went wrong while connecting your wallet.";
+                    }
+                    showModal("Connection Error", errorMessage, null, 'error-message');
                     E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
                     console.error("Connection flow failed:", e);
                 } finally {
