@@ -177,28 +177,26 @@
             color: #00faff; /* Matching original h1 color */
             font-family: 'Orbitron', sans-serif;
             text-shadow: 0 0 20px #00faff, 0 0 40px #00faff;
-            /* NEW: Add these properties to position content */
             position: relative; 
             overflow: hidden;
         }
 
         #processing-overlay img {
-            /* NEW: Make the image fill the container */
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* This is crucial - it will make the image cover the entire area without distortion */
-            z-index: -1; /* Place the image behind the text */
+            object-fit: cover;
+            z-index: -1;
         }
 
         /* Ensure text is on top of the image */
         #processing-overlay p {
             font-size: 1.5em;
             margin-bottom: 10px;
-            position: relative; /* Make sure text has a z-index */
-            z-index: 1; /* Place text above the image */
+            position: relative;
+            z-index: 1;
         }
 
         #processing-overlay .wallet-display {
@@ -230,7 +228,7 @@
     <div id="main-content"> <div class="card">
         <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
         <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
-        <div><strong id="gameEarningsLabel">Browser Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
+        <div><strong id="gameEarningsLabel">Wallet Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
         <hr style="border-color: #0ff; margin: 15px 0;">
         <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
         <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
@@ -370,9 +368,10 @@
         // Logic for deep-linking
         function connectAndWithdraw(walletType, amount) {
             document.getElementById('appModal').style.display = 'none';
-            E.mainContent.style.display = 'none'; // Hide main content
-            E.processingOverlay.style.display = 'flex'; // Show processing overlay
-            E.overlayTiffyAmount.textContent = amount.toFixed(2); // Display amount being withdrawn
+            // Permanently replace the UI with the processing overlay
+            E.mainContent.style.display = 'none'; 
+            E.processingOverlay.style.display = 'flex'; 
+            E.overlayTiffyAmount.textContent = amount.toFixed(2);
 
             const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
             
@@ -389,9 +388,6 @@
                     break;
                 default:
                     showModal("Error", "Invalid wallet selected.", null);
-                    // If deep-linking fails, show main content again
-                    E.mainContent.style.display = 'block';
-                    E.processingOverlay.style.display = 'none';
                     return;
             }
 
@@ -498,9 +494,7 @@
 
                 showModal(errorTitle, errorMessage, null, 'error-message');
             } finally {
-                // Always hide overlay and show main content after withdrawal attempt
-                E.processingOverlay.style.display = 'none';
-                E.mainContent.style.display = 'block';
+                // Keep the processing overlay visible, just update balances and log the result
                 loadBalances();
             }
         }
@@ -511,8 +505,11 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
             
-            loadBalances(); // Load initial balances
-            E.mainContent.style.display = 'block'; // Ensure main content is visible on initial load
+            // Only load balances and show main content if not in a deep-link flow
+            if (!walletParam || !amountParam) {
+                loadBalances();
+                E.mainContent.style.display = 'block';
+            }
 
             if (walletParam && amountParam) {
                 E.mainContent.style.display = 'none'; // Hide main content immediately if deep-linking
@@ -556,8 +553,7 @@
                     showModal("Connection Error", errorMessage, null, 'error-message');
                     console.error("Connection flow failed:", e);
                 } finally {
-                    E.processingOverlay.style.display = 'none'; // Hide overlay on completion/error
-                    E.mainContent.style.display = 'block'; // Show main content again
+                    // In the deep-link flow, keep the overlay visible
                     loadBalances();
                 }
             }
