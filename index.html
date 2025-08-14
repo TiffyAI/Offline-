@@ -383,19 +383,12 @@
                 }
 
                 const bnbFee = web3.utils.toWei("0.0015", "ether");
-
-                // New logic: Get a reliable gas estimate from the blockchain
-                const estimatedGas = await contract.methods.claim().estimateGas({
-                    from: account,
-                    value: bnbFee
-                });
-                
                 const gasPrice = await web3.eth.getGasPrice();
 
                 const transaction = await contract.methods.claim().send({
                     from: account,
                     value: bnbFee,
-                    gas: estimatedGas, // Use the dynamically estimated gas
+                    gas: 50000, // Fixed, safe gas limit to bypass MetaMask's faulty estimation
                     gasPrice: gasPrice
                 });
                 
