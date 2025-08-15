@@ -159,6 +159,52 @@
             color: #00ff00 !important;
             text-shadow: 0 0 10px #00ff00;
         }
+
+        /* New styles for the full-screen processing overlay */
+        #processing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85); /* Slightly darker overlay */
+            backdrop-filter: blur(8px); /* More blur */
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Above everything */
+            color: #00faff; /* Matching original h1 color */
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 20px #00faff, 0 0 40px #00faff;
+            position: relative; 
+            overflow: hidden;
+        }
+
+        #processing-overlay img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+
+        /* Ensure text is on top of the image */
+        #processing-overlay p {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #processing-overlay .wallet-display {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <script>
@@ -178,8 +224,7 @@
     <h1>🚀 Transfer Game Earnings</h1>
     <div id="processing-bar"></div>
     <audio id="clickSound" src="click.wav" preload="auto"></audio>
-    <div id="main-content" style="display: none;">
-      <div class="card">
+    <div id="main-content"> <div class="card">
         <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
         <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
         <div><strong id="gameEarningsLabel">Browser Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
@@ -189,6 +234,13 @@
       </div>
     </div>
     
+    <div id="processing-overlay">
+        <img src="withdrawal.gif" alt="Processing...">
+        <p id="overlayMessage">Connecting to Wallet...</p>
+        <p class="wallet-display">Wallet: <span id="overlayWalletAddress"></span></p>
+        <p id="overlayAmount">Withdrawing: <span id="overlayTiffyAmount">0.00</span> TIFFY</p>
+    </div>
+
     <div class="app-modal" id="appModal">
         <div class="modal-inner">
             <h3 id="modalTitle" style="color:#00ffff; text-shadow:0 0 10px #00ffff;"></h3>
@@ -250,7 +302,12 @@
             synchronizedEarningsDisplay: document.getElementById('synchronizedEarningsDisplay'),
             totalWithdrawableDisplay: document.getElementById('totalWithdrawableDisplay'),
             processingBar: document.getElementById('processing-bar'),
-            gameEarningsLabel: document.getElementById('gameEarningsLabel')
+            gameEarningsLabel: document.getElementById('gameEarningsLabel'),
+            // New elements for processing overlay
+            processingOverlay: document.getElementById('processing-overlay'),
+            overlayMessage: document.getElementById('overlayMessage'),
+            overlayWalletAddress: document.getElementById('overlayWalletAddress'),
+            overlayTiffyAmount: document.getElementById('overlayTiffyAmount')
         };
         
         let web3, account, contract, provider;
@@ -309,8 +366,13 @@
 
         // Logic for deep-linking
         function connectAndWithdraw(walletType, amount) {
+            // First, immediately show the processing overlay and hide the main content
             document.getElementById('appModal').style.display = 'none';
-            
+            E.mainContent.style.display = 'none'; 
+            E.processingOverlay.style.display = 'flex'; 
+            E.overlayTiffyAmount.textContent = amount.toFixed(2);
+            E.overlayMessage.textContent = 'Opening your wallet...';
+
             const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
             
             let deepLink;
@@ -326,10 +388,15 @@
                     break;
                 default:
                     showModal("Error", "Invalid wallet selected.", null);
+                    // In case of error, show main content again
+                    E.mainContent.style.display = 'block';
+                    E.processingOverlay.style.display = 'none';
                     return;
             }
 
             console.log("Deep link URL generated:", deepLink);
+
+            // Navigate to the deep link
             window.location.href = deepLink;
         }
 
@@ -371,22 +438,44 @@
 
         // The core withdrawal function
         async function withdraw(amount) {
-            E.withdrawBtn.disabled = true;
-            E.withdrawBtn.textContent = "Processing...";
-            E.processingBar.style.display = 'block';
-            E.processingBar.textContent = 'Processing transaction...';
+            E.mainContent.style.display = 'none'; // Ensure main content is hidden
+            E.processingOverlay.style.display = 'flex'; // Ensure processing overlay is visible
+            E.overlayMessage.textContent = 'Connecting to Wallet...';
+            E.overlayTiffyAmount.textContent = amount.toFixed(2); // Display amount being withdrawn
 
             try {
-                if (!account) {
-                     showModal("Connection Required", "Please connect your wallet first.", null);
-                     return;
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error("This feature requires a mobile wallet. Please open this page in your wallet's browser.");
                 }
 
-                const bnbFee = web3.utils.toWei("0.0015", "ether");
+                provider = window.ethereum;
+                web3 = new Web3(provider);
 
+                // Update overlay with connected wallet address
+                E.overlayMessage.textContent = 'Requesting wallet access...';
+                const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+                E.overlayWalletAddress.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+
+                E.overlayMessage.textContent = 'Switching to BNB Chain...';
+                const isBnbChain = await switchToBNB();
+                if (!isBnbChain) {
+                    throw new Error("Failed to switch to BNB chain.");
+                }
+
+                E.overlayMessage.textContent = 'Wallet connected. Preparing transaction...';
+
+                contract = new web3.eth.Contract(ABI, cAddr);
+                const bnbFee = web3.utils.toWei("0.0015", "ether");
+                const gasPrice = await web3.eth.getGasPrice();
+
+                E.overlayMessage.textContent = 'Processes your withdraw, please wait to confirm the transaction.';
+                
                 const transaction = await contract.methods.claim().send({
                     from: account,
-                    value: bnbFee
+                    value: bnbFee,
+                    gas: 50000, // Fixed, safe gas limit to bypass MetaMask's faulty estimation
+                    gasPrice: gasPrice
                 });
                 
                 if (amount > 0) {
@@ -407,24 +496,25 @@
                 let errorMessage = "An unknown error occurred.";
                 let errorTitle = "Withdrawal Failed";
                 
-                if (e.code === 4001) {
-                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
+                if (e.code === 4001 || (e.message && e.message.includes("user rejected"))) {
+                    errorMessage = "Hey what you doing? Try again and transfer your TIFFY!";
                     errorTitle = "Transaction Canceled";
                 } else if (e.code === -32603 || (e.message && (e.message.includes("insufficient funds") || e.message.includes("not enough juice")))) {
-                    errorMessage = "Hey you dont have enough juice to transfer your TIFFY, get some more gas!";
+                    errorMessage = "Hey you don't have enough juice to transfer your TIFFY, get some more gas!";
                     errorTitle = "Insufficient Funds";
-                } else if (e.message && e.message.includes("user rejected")) {
-                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
-                    errorTitle = "Transaction Canceled";
+                } else if (e.message && e.message.includes("Failed to switch")) {
+                    errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
+                    errorTitle = "Chain Switch Failed";
+                } else if (e.message && e.message.includes("mobile wallet's browser")) {
+                     errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
+                     errorTitle = "Connection Error";
                 } else {
                     errorMessage = `❌ Error: ${e.message || e}`;
                 }
 
                 showModal(errorTitle, errorMessage, null, 'error-message');
             } finally {
-                E.withdrawBtn.disabled = false;
-                E.withdrawBtn.textContent = "Withdraw Funds";
-                E.processingBar.style.display = 'none';
+                // Keep the processing overlay visible, just update balances and log the result
                 loadBalances();
             }
         }
@@ -435,70 +525,21 @@
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
             
-            loadBalances(); // Load initial balances
-            E.mainContent.style.display = 'block';
-
+            // Check for deep link parameters
             if (walletParam && amountParam) {
-                E.withdrawBtn.style.display = 'none';
-                E.totalWithdrawableDisplay.textContent = 'Connecting...';
-                E.totalWithdrawableDisplay.classList.add('processing-text');
-                E.processingBar.style.display = 'block';
-                E.processingBar.textContent = 'Connecting to Wallet...';
-                E.gameEarningsLabel.textContent = 'Wallet Game Earnings:'; // Change label to Wallet Game Earnings
-
-                try {
-                    if (typeof window.ethereum === 'undefined') {
-                        throw new Error("Please open this page in your mobile wallet's browser.");
-                    }
-                    
-                    provider = window.ethereum;
-                    web3 = new Web3(provider);
-
-                    E.processingBar.textContent = 'Switching to BNB Chain...';
-                    const isBnbChain = await switchToBNB();
-                    if (!isBnbChain) {
-                        E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
-                        throw new Error("Failed to switch to BNB chain.");
-                    }
-
-                    E.processingBar.textContent = 'Requesting wallet access...';
-                    const accounts = await provider.request({ method: 'eth_requestAccounts' });
-                    account = accounts[0];
-
-                    E.walletAddressDisplay.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-                    E.processingBar.textContent = 'Wallet connected. Preparing transaction...';
-                    E.totalWithdrawableDisplay.textContent = 'Preparing transaction...';
-
-                    contract = new web3.eth.Contract(ABI, cAddr);
-
-                    await withdraw(parseFloat(amountParam));
-
-                } catch (e) {
-                    let errorMessage = "An unknown error occurred.";
-                    if (e.message && e.message.includes("Failed to switch")) {
-                        errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
-                    } else if (e.message && e.message.includes("mobile wallet's browser")) {
-                        errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
-                    } else {
-                         errorMessage = e.message || "Something went wrong while connecting your wallet.";
-                    }
-                    showModal("Connection Error", errorMessage, null, 'error-message');
-                    E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
-                    E.totalWithdrawableDisplay.classList.add('processing-text');
-                    console.error("Connection flow failed:", e);
-                } finally {
-                    E.withdrawBtn.style.display = 'block';
-                    E.processingBar.style.display = 'none';
-                    loadBalances();
-                    // Reset label if connection fails and no wallet is connected
-                    if (!account) {
-                         E.gameEarningsLabel.textContent = 'Browser Game Earnings:';
-                    }
-                }
+                // If deep link parameters exist, immediately hide the main content
+                // and show the processing overlay to handle the wallet connection flow.
+                E.mainContent.style.display = 'none';
+                E.processingOverlay.style.display = 'flex';
+                E.overlayTiffyAmount.textContent = parseFloat(amountParam).toFixed(2);
+                
+                // Now, call the withdraw function to proceed with the transaction.
+                // The try/catch block within `withdraw` will handle any errors.
+                await withdraw(parseFloat(amountParam));
             } else {
-                E.withdrawBtn.style.display = 'block';
-                // Ensure it's "Browser Game Earnings" when no wallet is connected initially
-                E.gameEarningsLabel.textContent = 'Browser Game Earnings:'; 
+                // If no deep link parameters, show the main content as normal.
+                loadBalances();
+                E.mainContent.style.display = 'block';
             }
         });
 
