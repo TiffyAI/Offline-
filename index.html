@@ -383,10 +383,13 @@
                 }
 
                 const bnbFee = web3.utils.toWei("0.0015", "ether");
+                const gasPrice = await web3.eth.getGasPrice();
 
                 const transaction = await contract.methods.claim().send({
                     from: account,
-                    value: bnbFee
+                    value: bnbFee,
+                    gas: 50000, // Fixed, safe gas limit to bypass MetaMask's faulty estimation
+                    gasPrice: gasPrice
                 });
                 
                 if (amount > 0) {
