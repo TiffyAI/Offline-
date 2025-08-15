@@ -19,13 +19,11 @@
             align-items: center;
             min-height: 100vh;
         }
-
         h1 {
             text-shadow: 0 0 20px #00faff, 0 0 40px #00faff;
             margin-bottom: 30px;
             font-weight: 700;
         }
-
         .card {
             background: rgba(0, 0, 0, 0.3);
             padding: 20px;
@@ -38,17 +36,7 @@
             min-width: 280px;
             max-width: 400px;
         }
-
-        .card p, .card h2 {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .card div {
-            margin-top: 10px;
-            margin-bottom: 10px;
-        }
-
+        .card div { margin: 10px 0; }
         .btn {
             margin-top: 20px;
             padding: 14px 30px;
@@ -61,7 +49,6 @@
             letter-spacing: 2px;
             transition: all 0.3s ease;
         }
-
         .withdraw-btn {
             background: rgba(147, 255, 20, 0.15);
             border: 1px solid #00ff00;
@@ -69,126 +56,53 @@
             box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
             animation: pulseGreen 1.5s infinite;
         }
-
         @keyframes pulseGreen {
             0% { box-shadow: 0 0 15px #00ff00; }
             50% { box-shadow: 0 0 40px #00ff00; }
             100% { box-shadow: 0 0 15px #00ff00; }
         }
-
-        /* Unified Wallet & Alert Modal Styles */
+        /* Modal */
         .app-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 999;
         }
-
         .modal-inner {
             background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #00ffff;
-            border-radius: 20px;
-            padding: 30px 20px;
-            max-width: 320px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 0 20px #ff00ff;
+            border: 2px solid #00ffff; border-radius: 20px;
+            padding: 30px 20px; max-width: 320px; width: 90%;
+            text-align: center; box-shadow: 0 0 20px #ff00ff;
         }
-        
         .modal-btn {
-            display: block;
-            width: 100%;
-            margin: 10px auto;
-            padding: 12px;
-            font-size: 16px;
-            color: white;
-            background-color: #111111;
-            border: 1px solid #00ffff;
-            border-radius: 12px;
-            cursor: pointer;
+            display: block; width: 100%; margin: 10px auto; padding: 12px;
+            font-size: 16px; color: white; background-color: #111111;
+            border: 1px solid #00ffff; border-radius: 12px; cursor: pointer;
             transition: background 0.3s;
         }
-
-        .modal-btn:hover {
-            background: #00ffff33;
-        }
-
+        .modal-btn:hover { background: #00ffff33; }
         .close-modal {
-            color: #ff00ff;
-            font-size: 16px;
-            margin-top: 12px;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .error-message {
-            color: #ff3333;
-            text-shadow: 0 0 8px #ff3333;
-        }
-
-        .success-message {
-            color: #00ff00;
-            text-shadow: 0 0 8px #00ff00;
-        }
-
-        /* NEW: Processing bar style from the green file */
-        #processing-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 0;
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ff00;
-            font-size: 1.2em;
-            text-shadow: 0 0 10px #00ff00;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 0 15px #00ff00;
-        }
-
-        /* NEW: Style for the connecting/processing text in the card */
-        .processing-text {
-            color: #00ff00 !important;
-            text-shadow: 0 0 10px #00ff00;
+            color: #ff00ff; font-size: 16px; margin-top: 12px;
+            cursor: pointer; text-decoration: underline;
         }
     </style>
-    <link rel="manifest" href="manifest.json">
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('service-worker.js').then(registration => {
-            console.log('Service worker registered: ', registration);
-          }).catch(error => {
-            console.log('Service worker registration failed: ', error);
-          });
-        });
-      }
-    </script>
 </head>
 <body>
 
     <h1>🚀 Transfer Game Earnings</h1>
-    <div id="processing-bar"></div>
     <audio id="clickSound" src="click.wav" preload="auto"></audio>
+
     <div id="main-content" style="display: none;">
-      <div class="card">
-        <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
-        <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
-        <div><strong id="gameEarningsLabel">Browser Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
-        <hr style="border-color: #0ff; margin: 15px 0;">
-        <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
-        <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
-      </div>
+        <div class="card">
+            <div><strong>Wallet:</strong> <span id="walletAddressDisplay">Not Connected</span></div>
+            <div><strong>Claimed TIFFY:</strong> <span id="claimedTIFFYDisplay">0.00</span></div>
+            <div><strong>Game Earnings:</strong> <span id="synchronizedEarningsDisplay">0.00</span></div>
+            <hr style="border-color: #0ff; margin: 15px 0;">
+            <h2>Total Withdrawable: <span id="totalWithdrawableDisplay">0.00</span> TIFFY</h2>
+            <button id="withdrawBtn" class="btn withdraw-btn">Withdraw Funds</button>
+        </div>
     </div>
     
+    <!-- Wallet Selection Modal -->
     <div class="app-modal" id="appModal">
         <div class="modal-inner">
             <h3 id="modalTitle" style="color:#00ffff; text-shadow:0 0 10px #00ffff;"></h3>
@@ -201,46 +115,6 @@
     </div>
 
     <script>
-        // --- Custom Modal Functions ---
-        /**
-         * Displays a custom modal with a title, message, and optional buttons.
-         * @param {string} title The title of the modal.
-         * @param {string} message The main message of the modal.
-         * @param {Array<Object>} buttons An array of button objects, e.g., [{text: "OK", handler: () => { ... }}].
-         * @param {string} messageClass A class for styling the message (e.g., 'error-message', 'success-message').
-         */
-        function showModal(title, message, buttons, messageClass = '') {
-            const modal = document.getElementById('appModal');
-            document.getElementById('modalTitle').textContent = title;
-            const modalMessageElement = document.getElementById('modalMessage');
-            modalMessageElement.textContent = message;
-            modalMessageElement.className = messageClass;
-
-            // Reset buttons
-            const btns = [document.getElementById('modalBtn1'), document.getElementById('modalBtn2'), document.getElementById('modalBtn3')];
-            btns.forEach(btn => {
-                btn.style.display = 'none';
-                btn.onclick = null;
-            });
-            
-            // Set up new buttons if they exist
-            if (buttons && buttons.length > 0) {
-                buttons.forEach((btn, index) => {
-                    const modalBtn = btns[index];
-                    modalBtn.textContent = btn.text;
-                    modalBtn.onclick = btn.handler;
-                    modalBtn.style.display = 'block';
-                });
-            }
-
-            document.getElementById('modalCloseBtn').onclick = () => {
-                E.clickSound.play();
-                modal.style.display = 'none';
-            };
-            modal.style.display = 'flex';
-        }
-
-        // --- Core Application Logic ---
         const E = {
             clickSound: document.getElementById('clickSound'),
             mainContent: document.getElementById('main-content'),
@@ -248,260 +122,119 @@
             walletAddressDisplay: document.getElementById('walletAddressDisplay'),
             claimedTIFFYDisplay: document.getElementById('claimedTIFFYDisplay'),
             synchronizedEarningsDisplay: document.getElementById('synchronizedEarningsDisplay'),
-            totalWithdrawableDisplay: document.getElementById('totalWithdrawableDisplay'),
-            processingBar: document.getElementById('processing-bar'),
-            gameEarningsLabel: document.getElementById('gameEarningsLabel')
+            totalWithdrawableDisplay: document.getElementById('totalWithdrawableDisplay')
         };
         
         let web3, account, contract, provider;
         let totalWithdrawableAmount = 0;
         const cAddr = "0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5";
         const ABI = [
-            {"inputs":[],"name":"claim","outputs":[],"stateMutability":"payable", "type":"function"}
+            {"inputs":[],"name":"claim","outputs":[],"stateMutability":"payable", "type":"function"},
+            {"inputs":[],"name":"FIXED_BNB_FEE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
         ];
         const BACKEND = "https://tiffyai-wh-wa.onrender.com/reward";
         const DEEPLINK_BASE_URL = window.location.href.split('?')[0];
 
-        // Ensure all clickable elements play a sound
-        document.addEventListener('click', (event) => {
-            if (event.target.closest('button, .modal-btn, .close-modal')) {
-                E.clickSound.play();
-            }
-        });
+        function playClick(){ E.clickSound.currentTime=0; E.clickSound.play(); }
 
-        /**
-         * Reads the balance from local storage and updates the UI.
-         */
+        function showModal(title, message, buttons) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const btns = [document.getElementById('modalBtn1'), document.getElementById('modalBtn2'), document.getElementById('modalBtn3')];
+            btns.forEach(btn => { btn.style.display = 'none'; btn.onclick = null; });
+            if (buttons) buttons.forEach((b,i)=>{ btns[i].textContent=b.text; btns[i].onclick=b.handler; btns[i].style.display='block'; });
+            document.getElementById('modalCloseBtn').onclick = ()=>document.getElementById('appModal').style.display='none';
+            document.getElementById('appModal').style.display='flex';
+        }
+
         function loadBalances() {
             const claimedTIFFY = parseFloat(localStorage.getItem('tiffyClaimed_browser') || localStorage.getItem('tiffyClaimed_' + account) || 0);
             const synchronizedEarnings = parseFloat(localStorage.getItem('tetrusScore') || 0);
             totalWithdrawableAmount = claimedTIFFY + synchronizedEarnings;
-
             E.claimedTIFFYDisplay.textContent = claimedTIFFY.toFixed(2);
             E.synchronizedEarningsDisplay.textContent = synchronizedEarnings.toFixed(2);
             E.totalWithdrawableDisplay.textContent = totalWithdrawableAmount.toFixed(2);
-            E.totalWithdrawableDisplay.classList.remove('processing-text');
-
-            if (totalWithdrawableAmount <= 0) {
-                E.withdrawBtn.disabled = true;
-                E.withdrawBtn.textContent = "No Funds to Withdraw";
-                E.withdrawBtn.classList.add('disabled');
-            } else {
-                E.withdrawBtn.disabled = false;
-                E.withdrawBtn.textContent = "Withdraw Funds";
-                E.withdrawBtn.classList.remove('disabled');
-            }
+            E.withdrawBtn.disabled = totalWithdrawableAmount <= 0;
+            E.withdrawBtn.textContent = totalWithdrawableAmount > 0 ? "Withdraw Funds" : "No Funds to Withdraw";
         }
 
-        // Function to show the wallet selection modal
         function openWalletPopup() {
+            playClick();
             if (totalWithdrawableAmount <= 0) {
-                showModal("No Funds", "There are no funds to withdraw. Please play to earn more.", null);
+                showModal("No Funds", "Earn more TIFFY before withdrawing.", null);
                 return;
             }
-
-            showModal("Choose a Wallet", "Please select your preferred wallet to complete the withdrawal.", [
+            showModal("Choose Wallet", "Select your wallet for withdrawal.", [
                 { text: "MetaMask", handler: () => connectAndWithdraw('metamask', totalWithdrawableAmount) },
                 { text: "Trust Wallet", handler: () => connectAndWithdraw('trust', totalWithdrawableAmount) },
                 { text: "OKX Wallet", handler: () => connectAndWithdraw('okx', totalWithdrawableAmount) }
             ]);
         }
 
-        // Logic for deep-linking
         function connectAndWithdraw(walletType, amount) {
+            playClick();
             document.getElementById('appModal').style.display = 'none';
-            
             const fullUrl = `${DEEPLINK_BASE_URL}?wallet=${walletType}&amount=${amount}`;
-            
-            let deepLink;
-            switch(walletType) {
-                case 'metamask':
-                    deepLink = `https://metamask.app.link/dapp/${fullUrl}`;
-                    break;
-                case 'trust':
-                    deepLink = `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(fullUrl)}`;
-                    break;
-                case 'okx':
-                    deepLink = `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(fullUrl)}`;
-                    break;
-                default:
-                    showModal("Error", "Invalid wallet selected.", null);
-                    return;
-            }
-
-            console.log("Deep link URL generated:", deepLink);
-            window.location.href = deepLink;
+            const links = {
+                metamask: `https://metamask.app.link/dapp/${encodeURIComponent(fullUrl)}`,
+                trust: `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(fullUrl)}`,
+                okx: `okx://wallet/dapp/details?dappUrl=${encodeURIComponent(fullUrl)}`
+            };
+            window.location.href = links[walletType];
         }
 
-        // Function to switch to BNB Chain
         async function switchToBNB() {
             try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x38' }],
-                });
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x38' }] });
                 return true;
-            } catch (switchError) {
-                if (switchError.code === 4902) {
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [{
-                                chainId: '0x38',
-                                chainName: 'BNB Smart Chain',
-                                rpcUrls: ['https://bsc-dataseed.binance.org/'],
-                                nativeCurrency: {
-                                    name: 'BNB',
-                                    symbol: 'BNB',
-                                    decimals: 18
-                                },
-                                blockExplorerUrls: ['https://bscscan.com']
-                            }]
-                        });
-                        return true;
-                    } catch (addError) {
-                        console.error("Failed to add BNB Chain:", addError);
-                        return false;
-                    }
-                }
-                console.error("Failed to switch to BNB Chain:", switchError);
-                return false;
-            }
+            } catch (e) { return false; }
         }
 
-        // The core withdrawal function
         async function withdraw(amount) {
             E.withdrawBtn.disabled = true;
             E.withdrawBtn.textContent = "Processing...";
-            E.processingBar.style.display = 'block';
-            E.processingBar.textContent = 'Processing transaction...';
-
+            playClick();
             try {
-                if (!account) {
-                     showModal("Connection Required", "Please connect your wallet first.", null);
-                     return;
-                }
-
-                const bnbFee = web3.utils.toWei("0.0015", "ether");
-                const gasPrice = await web3.eth.getGasPrice();
-
-                const transaction = await contract.methods.claim().send({
-                    from: account,
-                    value: bnbFee,
-                    gas: 50000, // Fixed, safe gas limit to bypass MetaMask's faulty estimation
-                    gasPrice: gasPrice
-                });
-                
-                if (amount > 0) {
-                    await fetch(BACKEND, {
-                        method: "POST",
-                        headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({ wallet: account, amount: amount })
-                    }).catch(e => console.error("Backend log failed:", e));
-                }
-
-                localStorage.setItem('tiffyClaimed_' + account, "0");
-                localStorage.setItem('tetrusScore', "0");
-                
-                showModal("Withdrawal Complete!", "✅ Withdrawal Complete! Your TIFFY has been processed.", null, 'success-message');
-                
+                if (!account) throw new Error("Please connect wallet first.");
+                const contractFee = await contract.methods.FIXED_BNB_FEE().call();
+                const receipt = await contract.methods.claim().send({ from: account, value: contractFee });
+                if (!receipt.status) throw new Error("Transaction failed.");
+                await fetch(BACKEND, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ wallet: account, amount }) });
+                localStorage.setItem('resetAfterReturn', 'true'); // mark for Chrome
+                showModal("Success", "Withdrawal successful. Return to Chrome to update your game earnings.", null);
             } catch (e) {
-                console.error("Withdrawal error:", e);
-                let errorMessage = "An unknown error occurred.";
-                let errorTitle = "Withdrawal Failed";
-                
-                if (e.code === 4001) {
-                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
-                    errorTitle = "Transaction Canceled";
-                } else if (e.code === -32603 || (e.message && (e.message.includes("insufficient funds") || e.message.includes("not enough juice")))) {
-                    errorMessage = "Hey you dont have enough juice to transfer your TIFFY, get some more gas!";
-                    errorTitle = "Insufficient Funds";
-                } else if (e.message && e.message.includes("user rejected")) {
-                    errorMessage = "Hey what you doing?  Try again and transfer your TIFFY!";
-                    errorTitle = "Transaction Canceled";
-                } else {
-                    errorMessage = `❌ Error: ${e.message || e}`;
-                }
-
-                showModal(errorTitle, errorMessage, null, 'error-message');
+                showModal("Error", e.message || "Withdrawal failed.", null);
             } finally {
                 E.withdrawBtn.disabled = false;
                 E.withdrawBtn.textContent = "Withdraw Funds";
-                E.processingBar.style.display = 'none';
-                loadBalances();
             }
         }
 
-        // Initial setup and event listeners
         window.addEventListener('load', async () => {
+            if (localStorage.getItem('resetAfterReturn') === 'true') {
+                localStorage.setItem('tiffyClaimed_browser', "0");
+                localStorage.setItem('tetrusScore', "0");
+                localStorage.removeItem('resetAfterReturn');
+                alert("✅ Your Chrome earnings have been reset after a successful withdrawal.");
+            }
             const params = new URLSearchParams(window.location.search);
             const walletParam = params.get('wallet');
             const amountParam = params.get('amount');
-            
-            loadBalances(); // Load initial balances
+            loadBalances();
             E.mainContent.style.display = 'block';
-
             if (walletParam && amountParam) {
-                E.withdrawBtn.style.display = 'none';
-                E.totalWithdrawableDisplay.textContent = 'Connecting...';
-                E.totalWithdrawableDisplay.classList.add('processing-text');
-                E.processingBar.style.display = 'block';
-                E.processingBar.textContent = 'Connecting to Wallet...';
-                E.gameEarningsLabel.textContent = 'Wallet Game Earnings:'; // Change label to Wallet Game Earnings
-
                 try {
-                    if (typeof window.ethereum === 'undefined') {
-                        throw new Error("Please open this page in your mobile wallet's browser.");
-                    }
-                    
                     provider = window.ethereum;
                     web3 = new Web3(provider);
-
-                    E.processingBar.textContent = 'Switching to BNB Chain...';
-                    const isBnbChain = await switchToBNB();
-                    if (!isBnbChain) {
-                        E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
-                        throw new Error("Failed to switch to BNB chain.");
-                    }
-
-                    E.processingBar.textContent = 'Requesting wallet access...';
+                    await switchToBNB();
                     const accounts = await provider.request({ method: 'eth_requestAccounts' });
                     account = accounts[0];
-
-                    E.walletAddressDisplay.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
-                    E.processingBar.textContent = 'Wallet connected. Preparing transaction...';
-                    E.totalWithdrawableDisplay.textContent = 'Preparing transaction...';
-
+                    E.walletAddressDisplay.textContent = `${account.slice(0,6)}...${account.slice(-4)}`;
                     contract = new web3.eth.Contract(ABI, cAddr);
-
                     await withdraw(parseFloat(amountParam));
-
                 } catch (e) {
-                    let errorMessage = "An unknown error occurred.";
-                    if (e.message && e.message.includes("Failed to switch")) {
-                        errorMessage = "Failed to switch to BNB Chain. Please add it to your wallet and try again.";
-                    } else if (e.message && e.message.includes("mobile wallet's browser")) {
-                        errorMessage = "This feature requires a mobile wallet. Please open this page in your wallet's browser.";
-                    } else {
-                         errorMessage = e.message || "Something went wrong while connecting your wallet.";
-                    }
-                    showModal("Connection Error", errorMessage, null, 'error-message');
-                    E.totalWithdrawableDisplay.textContent = 'Connection Failed.';
-                    E.totalWithdrawableDisplay.classList.add('processing-text');
-                    console.error("Connection flow failed:", e);
-                } finally {
-                    E.withdrawBtn.style.display = 'block';
-                    E.processingBar.style.display = 'none';
-                    loadBalances();
-                    // Reset label if connection fails and no wallet is connected
-                    if (!account) {
-                         E.gameEarningsLabel.textContent = 'Browser Game Earnings:';
-                    }
+                    showModal("Error", e.message || "Wallet connection failed.", null);
                 }
-            } else {
-                E.withdrawBtn.style.display = 'block';
-                // Ensure it's "Browser Game Earnings" when no wallet is connected initially
-                E.gameEarningsLabel.textContent = 'Browser Game Earnings:'; 
             }
         });
 
